@@ -413,7 +413,7 @@ graph TB
         
         subgraph "存储层"
             LocalVolumes[本地数据卷]
-            CloudBackup[云备份 (可选)]
+            CloudBackup[云备份 -可选]
         end
         
         subgraph "监控层"
