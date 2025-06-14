@@ -1,0 +1,58 @@
+{"level":"info","message":"Registered capability: node_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.838Z"}
+{"level":"info","message":"Registered capability: node_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.843Z"}
+{"level":"info","message":"Registered capability: relationship_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.839Z"}
+{"level":"info","message":"Registered capability: graph_traversal","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.840Z"}
+{"level":"info","message":"Registered capability: vector_search","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.840Z"}
+{"level":"info","message":"Registered capability: relationship_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.845Z"}
+{"level":"info","message":"Registered capability: graph_traversal","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.846Z"}
+{"level":"info","message":"Registered capability: vector_search","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.846Z"}
+{"level":"info","message":"Initializing Knowledge Graph MCP Service","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.846Z"}
+{"level":"info","message":"Initializing service: KnowledgeGraphService@1.0.0","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.846Z"}
+{"level":"info","message":"Knowledge Graph MCP Service initialized","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.847Z"}
+{"level":"info","message":"Shutting down Knowledge Graph MCP Service","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.852Z"}
+{"level":"info","message":"Shutting down service: KnowledgeGraphService@1.0.0","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.853Z"}
+{"level":"info","message":"Knowledge Graph MCP Service shut down","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.853Z"}
+{"level":"info","message":"Registered capability: node_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.838Z"}
+{"level":"info","message":"Registered capability: relationship_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.839Z"}
+{"level":"info","message":"Registered capability: graph_traversal","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.839Z"}
+{"level":"info","message":"Registered capability: vector_search","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.840Z"}
+{"level":"info","message":"Initializing Knowledge Graph MCP Service","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.840Z"}
+{"level":"info","message":"Initializing service: KnowledgeGraphService@1.0.0","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.841Z"}
+{"level":"info","message":"Knowledge Graph MCP Service initialized","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.841Z"}
+{"level":"info","message":"Shutting down Knowledge Graph MCP Service","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.859Z"}
+{"level":"info","message":"Shutting down service: KnowledgeGraphService@1.0.0","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.860Z"}
+{"level":"info","message":"Knowledge Graph MCP Service shut down","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:56:11.860Z"}
+{"level":"info","message":"Registered capability: node_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.667Z"}
+{"level":"info","message":"Registered capability: node_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.669Z"}
+{"level":"info","message":"Registered capability: relationship_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.667Z"}
+{"level":"info","message":"Registered capability: graph_traversal","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.667Z"}
+{"level":"info","message":"Registered capability: vector_search","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.667Z"}
+{"level":"info","message":"Registered capability: relationship_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.669Z"}
+{"level":"info","message":"Registered capability: graph_traversal","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.669Z"}
+{"level":"info","message":"Registered capability: vector_search","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.669Z"}
+{"level":"info","message":"Initializing Knowledge Graph MCP Service","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.669Z"}
+{"level":"info","message":"Initializing service: KnowledgeGraphService@1.0.0","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.669Z"}
+{"level":"info","message":"Knowledge Graph MCP Service initialized","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.670Z"}
+{"level":"info","message":"Shutting down Knowledge Graph MCP Service","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.682Z"}
+{"level":"info","message":"Shutting down service: KnowledgeGraphService@1.0.0","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.682Z"}
+{"level":"info","message":"Knowledge Graph MCP Service shut down","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.682Z"}
+{"level":"info","message":"Registered capability: node_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.667Z"}
+{"level":"info","message":"Registered capability: relationship_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.667Z"}
+{"level":"info","message":"Registered capability: graph_traversal","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.668Z"}
+{"level":"info","message":"Registered capability: vector_search","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.668Z"}
+{"level":"info","message":"Initializing Knowledge Graph MCP Service","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.690Z"}
+{"level":"info","message":"Initializing service: KnowledgeGraphService@1.0.0","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.691Z"}
+{"level":"info","message":"Knowledge Graph MCP Service initialized","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.692Z"}
+{"level":"info","message":"Shutting down Knowledge Graph MCP Service","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.713Z"}
+{"level":"info","message":"Shutting down service: KnowledgeGraphService@1.0.0","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.714Z"}
+{"level":"info","message":"Knowledge Graph MCP Service shut down","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T14:59:31.714Z"}
+{"level":"info","message":"Registered capability: node_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T15:03:12.973Z"}
+{"level":"info","message":"Registered capability: relationship_management","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T15:03:12.973Z"}
+{"level":"info","message":"Registered capability: graph_traversal","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T15:03:12.973Z"}
+{"level":"info","message":"Registered capability: vector_search","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T15:03:12.973Z"}
+{"level":"info","message":"Initializing Knowledge Graph MCP Service","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T15:03:12.982Z"}
+{"level":"info","message":"Initializing service: KnowledgeGraphService@1.0.0","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T15:03:12.983Z"}
+{"level":"info","message":"Knowledge Graph MCP Service initialized","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T15:03:12.983Z"}
+{"level":"info","message":"Shutting down Knowledge Graph MCP Service","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T15:03:12.995Z"}
+{"level":"info","message":"Shutting down service: KnowledgeGraphService@1.0.0","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T15:03:12.995Z"}
+{"level":"info","message":"Knowledge Graph MCP Service shut down","service":"KnowledgeGraphService:1.0.0","timestamp":"2025-06-14T15:03:12.995Z"}

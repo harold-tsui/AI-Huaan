@@ -1,0 +1,268 @@
+src/services/knowledge-graph-mcp/examples/advanced-usage.ts(18,51): error TS2554: Expected 0 arguments, but got 1.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(76,64): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(78,39): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(100,67): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(102,45): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(126,70): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(147,62): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(186,55): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(228,65): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(265,68): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(288,44): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/services/knowledge-graph-mcp/examples/integration-example.ts(324,48): error TS2339: Property 'data' does not exist on type 'LegacyMCPResponse'.
+src/shared/ai-services/ai-routing-service.ts(41,5): error TS2322: Type 'AppConfig' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'AppConfig'.
+src/shared/ai-services/ai-routing-service.ts(53,35): error TS2339: Property 'openai' does not exist on type '{}'.
+src/shared/ai-services/ai-routing-service.ts(59,35): error TS2339: Property 'anthropic' does not exist on type '{}'.
+src/shared/ai-services/ai-routing-service.ts(69,60): error TS2345: Argument of type 'string | object' is not assignable to parameter of type 'Record<string, any> | undefined'.
+  Type 'string' is not assignable to type 'Record<string, any>'.
+src/shared/ai-services/ai-routing-service.ts(198,82): error TS2345: Argument of type 'string | object' is not assignable to parameter of type 'Record<string, any> | undefined'.
+  Type 'string' is not assignable to type 'Record<string, any>'.
+src/shared/ai-services/ai-routing-service.ts(290,65): error TS2345: Argument of type 'string | object' is not assignable to parameter of type 'Record<string, any> | undefined'.
+  Type 'string' is not assignable to type 'Record<string, any>'.
+src/shared/ai-services/anthropic-service.ts(160,70): error TS2694: Namespace '"/Users/haroldtsui/Work/11-AI-Lab/AI-Huaan/node_modules/@anthropic-ai/sdk/index".Anthropic' has no exported member 'MessageParam'.
+src/shared/ai-services/anthropic-service.ts(172,41): error TS2694: Namespace '"/Users/haroldtsui/Work/11-AI-Lab/AI-Huaan/node_modules/@anthropic-ai/sdk/index".Anthropic' has no exported member 'MessageParam'.
+src/shared/ai-services/anthropic-service.ts(216,58): error TS2694: Namespace '"/Users/haroldtsui/Work/11-AI-Lab/AI-Huaan/node_modules/@anthropic-ai/sdk/index".Anthropic' has no exported member 'Message'.
+src/shared/ai-services/anthropic-service.ts(248,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/shared/ai-services/anthropic-service.ts(263,143): error TS2694: Namespace '"/Users/haroldtsui/Work/11-AI-Lab/AI-Huaan/node_modules/@anthropic-ai/sdk/index".Anthropic' has no exported member 'Tool'.
+src/shared/ai-services/anthropic-service.ts(301,42): error TS2339: Property 'messages' does not exist on type 'Anthropic'.
+src/shared/ai-services/anthropic-service.ts(323,55): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/shared/ai-services/anthropic-service.ts(354,40): error TS2339: Property 'messages' does not exist on type 'Anthropic'.
+src/shared/ai-services/anthropic-service.ts(425,51): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/shared/ai-services/anthropic-service.ts(429,9): error TS2322: Type 'string | Error' is not assignable to type 'Error | undefined'.
+  Type 'string' is not assignable to type 'Error'.
+src/shared/ai-services/openai-service.ts(46,26): error TS2339: Property 'aiServices' does not exist on type 'AppConfig'.
+src/shared/ai-services/openai-service.ts(47,32): error TS2339: Property 'aiServices' does not exist on type 'AppConfig'.
+src/shared/ai-services/openai-service.ts(48,27): error TS2339: Property 'aiServices' does not exist on type 'AppConfig'.
+src/shared/ai-services/openai-service.ts(75,64): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/shared/ai-services/openai-service.ts(198,56): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/shared/ai-services/openai-service.ts(228,57): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/shared/ai-services/openai-service.ts(238,13): error TS2322: Type '{ role: OpenAI.Chat.ChatCompletionMessageParam["role"]; }' is not assignable to type 'ChatCompletionMessageParam'.
+  Type '{ role: "function" | "system" | "user" | "assistant" | "developer" | "tool"; }' is missing the following properties from type 'ChatCompletionFunctionMessageParam': content, name
+src/shared/ai-services/openai-service.ts(275,23): error TS2339: Property 'function_call' does not exist on type 'ChatCompletionMessageParam'.
+  Property 'function_call' does not exist on type 'ChatCompletionDeveloperMessageParam'.
+src/shared/ai-services/openai-service.ts(283,23): error TS2339: Property 'name' does not exist on type 'ChatCompletionMessageParam'.
+  Property 'name' does not exist on type 'ChatCompletionToolMessageParam'.
+src/shared/ai-services/openai-service.ts(345,29): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/shared/ai-services/openai-service.ts(418,55): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/shared/ai-services/openai-service.ts(549,51): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/shared/ai-services/openai-service.ts(553,9): error TS2322: Type 'string | Error' is not assignable to type 'Error | undefined'.
+  Type 'string' is not assignable to type 'Error'.
+src/shared/ai-services/prompt-manager.ts(26,5): error TS2322: Type 'AppConfig' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'AppConfig'.
+src/shared/ai-services/prompt-manager.ts(38,56): error TS2339: Property 'promptTemplates' does not exist on type '{}'.
+src/shared/ai-services/prompt-manager.ts(55,62): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/shared/capture-services/index.ts(46,53): error TS2345: Argument of type 'import("/Users/haroldtsui/Work/11-AI-Lab/AI-Huaan/src/shared/knowledge-graph-services/types").IKnowledgeGraphService' is not assignable to parameter of type 'import("/Users/haroldtsui/Work/11-AI-Lab/AI-Huaan/src/shared/knowledge-graph/types").IKnowledgeGraphService'.
+  Type 'IKnowledgeGraphService' is missing the following properties from type 'IKnowledgeGraphService': findNodes, createRelation, getRelation, updateRelation, and 4 more.
+src/shared/capture-services/index.ts(62,7): error TS2345: Argument of type 'import("/Users/haroldtsui/Work/11-AI-Lab/AI-Huaan/src/shared/knowledge-graph-services/types").IKnowledgeGraphService' is not assignable to parameter of type 'import("/Users/haroldtsui/Work/11-AI-Lab/AI-Huaan/src/shared/knowledge-graph/types").IKnowledgeGraphService'.
+  Type 'IKnowledgeGraphService' is missing the following properties from type 'IKnowledgeGraphService': findNodes, createRelation, getRelation, updateRelation, and 4 more.
+src/shared/capture-services/index.ts(68,7): error TS2345: Argument of type 'import("/Users/haroldtsui/Work/11-AI-Lab/AI-Huaan/src/shared/knowledge-graph-services/types").IKnowledgeGraphService' is not assignable to parameter of type 'import("/Users/haroldtsui/Work/11-AI-Lab/AI-Huaan/src/shared/knowledge-graph/types").IKnowledgeGraphService'.
+  Type 'IKnowledgeGraphService' is missing the following properties from type 'IKnowledgeGraphService': findNodes, createRelation, getRelation, updateRelation, and 4 more.
+src/shared/capture-services/memory-capture-service.ts(39,5): error TS2322: Type 'AppConfig' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'AppConfig'.
+src/shared/capture-services/memory-capture-service.ts(40,49): error TS2339: Property 'tempDir' does not exist on type '{}'.
+src/shared/capture-services/memory-capture-service.ts(145,47): error TS2345: Argument of type 'CaptureItem' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'CaptureItem'.
+src/shared/capture-services/memory-capture-service.ts(146,47): error TS2345: Argument of type 'CaptureItem' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'CaptureItem'.
+src/shared/capture-services/memory-capture-service.ts(197,7): error TS2322: Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+src/shared/capture-services/processors/file-processor.ts(327,9): error TS2739: Type '{}' is missing the following properties from type '{ structure: string; headings: string[]; codeBlocks: string[]; links: string[]; }': structure, headings, codeBlocks, links
+src/shared/capture-services/processors/file-processor.ts(331,7): error TS2739: Type '{}' is missing the following properties from type '{ structure: string; headings: string[]; codeBlocks: string[]; links: string[]; }': structure, headings, codeBlocks, links
+src/shared/capture-services/processors/file-processor.ts(358,13): error TS18046: 'structure.properties' is of type 'unknown'.
+src/shared/capture-services/processors/file-processor.ts(385,11): error TS2353: Object literal may only specify known properties, and 'sampleType' does not exist in type '{ type: string; length?: number | undefined; keys?: string[] | undefined; }'.
+src/shared/capture-services/processors/file-processor.ts(391,9): error TS2353: Object literal may only specify known properties, and 'propertyCount' does not exist in type '{ type: string; length?: number | undefined; keys?: string[] | undefined; }'.
+src/shared/capture-services/processors/file-processor.ts(391,36): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(o: {}): string[]', gave the following error.
+    Argument of type '{} | undefined' is not assignable to parameter of type '{}'.
+      Type 'undefined' is not assignable to type '{}'.
+  Overload 2 of 2, '(o: object): string[]', gave the following error.
+    Argument of type '{} | undefined' is not assignable to parameter of type 'object'.
+      Type 'undefined' is not assignable to type 'object'.
+src/shared/capture-services/processors/text-processor.ts(58,7): error TS2322: Type '{ name: string; type: string; relevance: number; }[]' is not assignable to type 'string[]'.
+  Type '{ name: string; type: string; relevance: number; }' is not assignable to type 'string'.
+src/shared/capture-services/processors/text-processor.ts(61,7): error TS2322: Type '{ score: number; label: string; }' is not assignable to type 'string'.
+src/shared/capture-services/processors/text-processor.ts(64,7): error TS2322: Type '{ name: string; score: number; }[]' is not assignable to type 'string[]'.
+  Type '{ name: string; score: number; }' is not assignable to type 'string'.
+src/shared/capture-services/processors/web-processor.ts(368,9): error TS2739: Type '{}' is missing the following properties from type '{ structure: string; headings: string[]; mainContent: string; navigation: string[]; }': structure, headings, mainContent, navigation
+src/shared/capture-services/processors/web-processor.ts(372,7): error TS2739: Type '{}' is missing the following properties from type '{ structure: string; headings: string[]; mainContent: string; navigation: string[]; }': structure, headings, mainContent, navigation
+src/shared/capture-services/text-capture-processor.ts(111,50): error TS2339: Property 'createChatCompletion' does not exist on type 'IAIService'.
+src/shared/capture-services/text-capture-processor.ts(120,47): error TS2339: Property 'createChatCompletion' does not exist on type 'IAIService'.
+src/shared/capture-services/text-capture-processor.ts(129,51): error TS2339: Property 'createChatCompletion' does not exist on type 'IAIService'.
+src/shared/capture-services/text-capture-processor.ts(139,14): error TS7006: Parameter 'tag' implicitly has an 'any' type.
+src/shared/capture-services/text-capture-processor.ts(140,17): error TS7006: Parameter 'tag' implicitly has an 'any' type.
+src/shared/capture-services/text-capture-processor.ts(143,9): error TS2353: Object literal may only specify known properties, and 'summary' does not exist in type 'Partial<CaptureItemContent>'.
+src/shared/capture-services/text-capture-processor.ts(172,28): error TS2339: Property 'summary' does not exist on type 'CaptureItemContent'.
+src/shared/capture-services/text-capture-processor.ts(173,29): error TS2551: Property 'createdAt' does not exist on type 'CaptureItem'. Did you mean 'created'?
+src/shared/capture-services/text-capture-processor.ts(179,19): error TS2339: Property 'tags' does not exist on type 'CaptureItemContent'.
+src/shared/capture-services/text-capture-processor.ts(179,49): error TS2339: Property 'tags' does not exist on type 'CaptureItemContent'.
+src/shared/capture-services/text-capture-processor.ts(180,35): error TS2339: Property 'tags' does not exist on type 'CaptureItemContent'.
+src/shared/capture-services/text-capture-processor.ts(183,13): error TS2561: Object literal may only specify known properties, but 'type' does not exist in type 'NodeFilter'. Did you mean to write 'types'?
+src/shared/capture-services/text-capture-processor.ts(234,51): error TS2339: Property 'createChatCompletion' does not exist on type 'IAIService'.
+src/shared/capture-services/text-capture-processor.ts(255,39): error TS2339: Property 'PLACE' does not exist on type 'typeof NodeType'.
+src/shared/capture-services/text-capture-processor.ts(265,17): error TS2561: Object literal may only specify known properties, but 'type' does not exist in type 'NodeFilter'. Did you mean to write 'types'?
+src/shared/knowledge-graph-services/memory-knowledge-graph-service.ts(112,11): error TS2532: Object is possibly 'undefined'.
+src/shared/knowledge-graph-services/memory-knowledge-graph-service.ts(392,85): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/shared/knowledge-graph-services/memory-knowledge-graph-service.ts(393,22): error TS2538: Type 'undefined' cannot be used as an index type.
+src/shared/knowledge-graph-services/memory-knowledge-graph-service.ts(394,22): error TS2538: Type 'undefined' cannot be used as an index type.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(61,14): error TS2415: Class 'Neo4jKnowledgeGraphService' incorrectly extends base class 'BaseKnowledgeGraphService'.
+  Property 'ensureInitialized' is private in type 'Neo4jKnowledgeGraphService' but not in type 'BaseKnowledgeGraphService'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(339,15): error TS2740: Type '{}' is missing the following properties from type 'Record<string, any, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>': keys, length, _fields, _fieldLookup, and 8 more.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(339,30): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(349,18): error TS2339: Property 'labels' does not exist on type 'Record<string, any, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(356,13): error TS7053: Element implicitly has an 'any' type because expression of type '`prop${number}`' can't be used to index type 'Record<string, any, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(597,15): error TS2740: Type '{}' is missing the following properties from type 'Record<string, any, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>': keys, length, _fields, _fieldLookup, and 8 more.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(597,30): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(602,18): error TS2339: Property 'types' does not exist on type 'Record<string, any, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(608,18): error TS2339: Property 'labels' does not exist on type 'Record<string, any, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(614,18): error TS2339: Property 'sourceNodeIds' does not exist on type 'Record<string, any, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(620,18): error TS2339: Property 'targetNodeIds' does not exist on type 'Record<string, any, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(627,13): error TS7053: Element implicitly has an 'any' type because expression of type '`prop${number}`' can't be used to index type 'Record<string, any, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1074,34): error TS2339: Property 'Label' does not exist on type '{ Node: typeof Node; Relationship: typeof Relationship; UnboundRelationship: typeof UnboundRelationship; PathSegment: typeof PathSegment; Path: typeof Path; ... 15 more ...; RxResult: typeof RxResult; }'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1074,57): error TS2339: Property 'Label' does not exist on type '{ Node: typeof Node; Relationship: typeof Relationship; UnboundRelationship: typeof UnboundRelationship; PathSegment: typeof PathSegment; Path: typeof Path; ... 15 more ...; RxResult: typeof RxResult; }'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1079,15): error TS2740: Type '{}' is missing the following properties from type 'Record<string, number, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>': keys, length, _fields, _fieldLookup, and 8 more.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1079,38): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1081,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<string, number, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1087,37): error TS2551: Property 'RelationshipType' does not exist on type '{ Node: typeof Node; Relationship: typeof Relationship; UnboundRelationship: typeof UnboundRelationship; PathSegment: typeof PathSegment; Path: typeof Path; ... 15 more ...; RxResult: typeof RxResult; }'. Did you mean 'Relationship'?
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1087,71): error TS2551: Property 'RelationshipType' does not exist on type '{ Node: typeof Node; Relationship: typeof Relationship; UnboundRelationship: typeof UnboundRelationship; PathSegment: typeof PathSegment; Path: typeof Path; ... 15 more ...; RxResult: typeof RxResult; }'. Did you mean 'Relationship'?
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1092,15): error TS2740: Type '{}' is missing the following properties from type 'Record<string, number, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>': keys, length, _fields, _fieldLookup, and 8 more.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1092,46): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1094,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<string, number, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1105,7): error TS2322: Type '{ nodeCount: any; relationshipCount: any; nodeTypeCounts: Record<string, number, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | ... 40 more ... | "matchAll", number>>; relationshipTypeCounts: Record<...>; }' is not assignable to type 'GraphStats'.
+  Types of property 'nodeTypeCounts' are incompatible.
+    Type 'Record<string, number, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>' is not assignable to type 'Record<string, number>'.
+      Index signature for type 'string' is missing in type 'Record<string, number, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1179,20): error TS2554: Expected 1 arguments, but got 0.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1266,52): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1267,34): error TS2339: Property 'properties' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1276,21): error TS2339: Property 'properties' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1277,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1277,34): error TS2339: Property 'labels' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1278,24): error TS2339: Property 'properties' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1281,28): error TS2339: Property 'properties' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1281,70): error TS2339: Property 'properties' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1282,28): error TS2339: Property 'properties' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1282,70): error TS2339: Property 'properties' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1661,18): error TS2304: Cannot find name 'edgeData'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1662,18): error TS2304: Cannot find name 'edgeData'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1724,13): error TS2740: Type '{}' is missing the following properties from type 'Record<string, { id: string; for: string; name: string; }, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | ... 38 more ... | "matchAll", number>>': keys, length, _fields, _fieldLookup, and 8 more.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1724,26): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1728,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<string, { id: string; for: string; name: string; }, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | ... 38 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1746,31): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<string, { id: string; for: string; name: string; }, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | ... 38 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1755,13): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1756,58): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1757,54): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1758,54): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.
+src/shared/knowledge-graph-services/neo4j-knowledge-graph-service.ts(1797,31): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<string, { id: string; for: string; name: string; }, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | ... 38 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(86,66): error TS2345: Argument of type 'string | Error' is not assignable to parameter of type 'Record<string, any> | undefined'.
+  Type 'string' is not assignable to type 'Record<string, any>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(250,26): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(250,47): error TS2353: Object literal may only specify known properties, and 'id' does not exist in type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(254,16): error TS2339: Property 'properties' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(259,16): error TS2339: Property 'embedding' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(337,11): error TS2740: Type '{}' is missing the following properties from type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>': keys, length, _fields, _fieldLookup, and 8 more.
+src/shared/knowledge-graph/neo4j-graph-service.ts(337,26): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(341,16): error TS2339: Property 'types' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(346,16): error TS2339: Property 'ids' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(352,11): error TS7053: Element implicitly has an 'any' type because expression of type '`prop_${string}`' can't be used to index type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(358,16): error TS2339: Property 'createdAfter' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(363,16): error TS2339: Property 'createdBefore' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(368,16): error TS2339: Property 'modifiedAfter' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(373,16): error TS2339: Property 'modifiedBefore' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(392,16): error TS2339: Property 'textSearch' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(406,18): error TS2339: Property 'limit' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(411,18): error TS2339: Property 'skip' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(532,26): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(532,47): error TS2353: Object literal may only specify known properties, and 'id' does not exist in type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(536,16): error TS2339: Property 'properties' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(613,11): error TS2740: Type '{}' is missing the following properties from type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>': keys, length, _fields, _fieldLookup, and 8 more.
+src/shared/knowledge-graph/neo4j-graph-service.ts(613,26): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(617,16): error TS2339: Property 'types' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(622,16): error TS2339: Property 'sourceIds' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(627,16): error TS2339: Property 'targetIds' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(633,11): error TS7053: Element implicitly has an 'any' type because expression of type '`prop_${string}`' can't be used to index type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(639,16): error TS2339: Property 'createdAfter' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(644,16): error TS2339: Property 'createdBefore' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(649,16): error TS2339: Property 'modifiedAfter' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(654,16): error TS2339: Property 'modifiedBefore' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(675,18): error TS2339: Property 'limit' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(680,18): error TS2339: Property 'skip' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(780,26): error TS2344: Type 'string' does not satisfy the constraint 'RecordShape<PropertyKey, any>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(781,9): error TS2353: Object literal may only specify known properties, and 'startNodeId' does not exist in type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/knowledge-graph/neo4j-graph-service.ts(788,16): error TS2339: Property 'relationTypes' does not exist on type 'Record<string, unknown, RecordShape<number | unique symbol | "length" | "toString" | "concat" | "slice" | "indexOf" | "lastIndexOf" | "includes" | "at" | "charAt" | "charCodeAt" | "localeCompare" | ... 36 more ... | "matchAll", number>>'.
+src/shared/mcp-core/base-service.ts(58,86): error TS2345: Argument of type 'string | Error' is not assignable to parameter of type 'Record<string, any> | undefined'.
+  Type 'string' is not assignable to type 'Record<string, any>'.
+src/shared/mcp-core/request-handler.ts(111,28): error TS2684: The 'this' context of type '(() => Promise<boolean>) | (() => Promise<boolean>) | (() => Promise<boolean>) | ((request: MCPRequest) => Promise<MCPResponse>) | ... 4 more ... | (() => ServiceInfo)' is not assignable to method's 'this' of type '(this: IMCPService, args_0: any) => Promise<boolean>'.
+  Type '(request: MCPRequest) => Promise<MCPResponse>' is not assignable to type '(this: IMCPService, args_0: any) => Promise<boolean>'.
+    Type 'Promise<MCPResponse>' is not assignable to type 'Promise<boolean>'.
+      Type 'MCPResponse' is not assignable to type 'boolean'.
+src/shared/storage-services/base-storage-service.ts(74,76): error TS2345: Argument of type 'string | Error' is not assignable to parameter of type 'Record<string, any> | undefined'.
+  Type 'string' is not assignable to type 'Record<string, any>'.
+src/shared/storage-services/base-storage-service.ts(100,77): error TS2345: Argument of type 'string | Error' is not assignable to parameter of type 'Record<string, any> | undefined'.
+  Type 'string' is not assignable to type 'Record<string, any>'.
+src/shared/storage-services/base-storage-service.ts(153,70): error TS2345: Argument of type 'string | object' is not assignable to parameter of type 'Record<string, any> | undefined'.
+  Type 'string' is not assignable to type 'Record<string, any>'.
+src/shared/storage-services/s3-storage-service.ts(207,32): error TS2345: Argument of type 'PutObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'PutObjectCommand'.
+src/shared/storage-services/s3-storage-service.ts(260,32): error TS2345: Argument of type 'PutObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'PutObjectCommand'.
+src/shared/storage-services/s3-storage-service.ts(308,49): error TS2345: Argument of type 'GetObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'GetObjectCommand'.
+src/shared/storage-services/s3-storage-service.ts(344,49): error TS2345: Argument of type 'GetObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'GetObjectCommand'.
+src/shared/storage-services/s3-storage-service.ts(371,49): error TS2345: Argument of type 'HeadObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'HeadObjectCommand'.
+src/shared/storage-services/s3-storage-service.ts(377,9): error TS2322: Type '{}' is not assignable to type 'number'.
+src/shared/storage-services/s3-storage-service.ts(378,9): error TS2322: Type '{}' is not assignable to type 'string'.
+src/shared/storage-services/s3-storage-service.ts(379,43): error TS2339: Property 'toISOString' does not exist on type '{}'.
+src/shared/storage-services/s3-storage-service.ts(380,43): error TS2339: Property 'toISOString' does not exist on type '{}'.
+src/shared/storage-services/s3-storage-service.ts(382,43): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, string> | undefined'.
+src/shared/storage-services/s3-storage-service.ts(417,49): error TS2345: Argument of type 'ListObjectsV2Command' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ListObjectsV2Command'.
+src/shared/storage-services/s3-storage-service.ts(449,32): error TS2345: Argument of type 'HeadObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'HeadObjectCommand'.
+src/shared/storage-services/s3-storage-service.ts(482,49): error TS2345: Argument of type 'ListObjectsV2Command' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ListObjectsV2Command'.
+src/shared/storage-services/s3-storage-service.ts(485,32): error TS2365: Operator '>' cannot be applied to types '{}' and 'number'.
+src/shared/storage-services/s3-storage-service.ts(519,49): error TS2345: Argument of type 'ListObjectsV2Command' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ListObjectsV2Command'.
+src/shared/storage-services/s3-storage-service.ts(526,31): error TS2488: Type '{}' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/shared/storage-services/s3-storage-service.ts(557,36): error TS2488: Type '{}' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/shared/storage-services/s3-storage-service.ts(576,9): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+src/shared/storage-services/s3-storage-service.ts(577,44): error TS2339: Property 'map' does not exist on type '{}'.
+src/shared/storage-services/s3-storage-service.ts(607,32): error TS2345: Argument of type 'PutObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'PutObjectCommand'.
+src/shared/storage-services/s3-storage-service.ts(647,32): error TS2345: Argument of type 'DeleteObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'DeleteObjectCommand'.
+src/shared/storage-services/s3-storage-service.ts(702,32): error TS2345: Argument of type 'DeleteObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'DeleteObjectCommand'.
+src/shared/storage-services/s3-storage-service.ts(748,32): error TS2345: Argument of type 'CopyObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'CopyObjectCommand'.
+src/shared/storage-services/s3-storage-service.ts(787,53): error TS2345: Argument of type 'CreateMultipartUploadCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'CreateMultipartUploadCommand'.
+src/shared/storage-services/s3-storage-service.ts(822,63): error TS2345: Argument of type 'UploadPartCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'UploadPartCommand'.
+src/shared/storage-services/s3-storage-service.ts(830,29): error TS2345: Argument of type 'Promise<{ PartNumber: number; ETag: {}; }>' is not assignable to parameter of type 'Promise<{ PartNumber: number; ETag: string; }>'.
+  Type '{ PartNumber: number; ETag: {}; }' is not assignable to type '{ PartNumber: number; ETag: string; }'.
+    Types of property 'ETag' are incompatible.
+      Type '{}' is not assignable to type 'string'.
+src/shared/storage-services/s3-storage-service.ts(846,32): error TS2345: Argument of type 'CompleteMultipartUploadCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'CompleteMultipartUploadCommand'.
+src/shared/storage-services/s3-storage-service.ts(1044,32): error TS2345: Argument of type 'PutObjectAclCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'PutObjectAclCommand'.
+src/shared/storage-services/s3-storage-service.ts(1095,32): error TS2345: Argument of type 'CopyObjectCommand' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'CopyObjectCommand'.
+src/utils/config.ts(581,9): error TS2322: Type 'AppConfig' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'AppConfig'.
+src/utils/config.ts(588,7): error TS2322: Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+src/utils/config.ts(610,11): error TS2322: Type 'AppConfig' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'AppConfig'.
+src/utils/config.ts(617,9): error TS2322: Type 'unknown' is not assignable to type 'Record<string, unknown>'.
