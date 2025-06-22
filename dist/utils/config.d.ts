@@ -127,20 +127,18 @@ export interface AppConfig {
         services: Record<string, any>;
     };
 }
+export declare const config: AppConfig;
 /**
  * 配置管理类
  * 负责加载、验证、管理和持久化应用配置
  */
 export declare class ConfigManager {
-    private static instance;
+    private static instance?;
     private config;
-    private logger;
     private initialized;
-    private constructor();
-    /**
-     * 获取配置管理实例
-     * @returns 配置管理实例
-     */
+    private readonly configFilePath?;
+    private logger;
+    constructor(configFilePath?: string);
     static getInstance(): ConfigManager;
     /**
      * 确保配置管理器已初始化
@@ -148,20 +146,24 @@ export declare class ConfigManager {
      */
     private ensureInitialized;
     /**
-     * 加载配置
-     * @returns 应用配置
-     */
-    private loadConfig;
-    /**
-     * 加载环境变量
+     * 加载环境变量 (.env file)
+     * This method is called early in the constructor.
+     * It uses console for logging as this.logger might not be initialized yet.
      */
     private loadEnv;
     /**
-     * 将环境变量合并到配置中
-     * @param defaultConfig 默认配置
-     * @returns 合并后的配置
+     * Loads configuration from a JSON file and merges it into this.config.
+     * this.config should already be initialized with defaults before this method is called.
+     * It then calls applyEnvOverrides to ensure environment variables take precedence.
+     * Uses this.logger for logging, assuming it's initialized.
      */
-    private mergeWithEnvVars;
+    private loadConfigFromFile;
+    /**
+     * Applies environment variable overrides to this.config.
+     * This method is called after defaults and file configurations are loaded.
+     * Modifies this.config in place.
+     */
+    private applyEnvOverrides;
     /**
      * 深度合并对象
      * @param target 目标对象
@@ -173,12 +175,13 @@ export declare class ConfigManager {
      * 检查必要的配置项是否存在且有效
      * @throws 如果配置无效则抛出错误
      */
+    private _getConfigValueAtPath;
     private validateConfig;
     /**
-     * 验证必要的配置字段
-     * @param path 配置路径
-     * @param fields 必要的字段
-     * @throws 如果必要的字段不存在则抛出错误
+     * 验证指定路径下的必需字段
+     * @param basePath 基础路径
+     * @param fields 字段列表
+     * @throws 如果字段缺失或无效则抛出错误
      */
     private validateRequiredFields;
     /**
@@ -190,16 +193,21 @@ export declare class ConfigManager {
      * 获取特定配置项
      * @param path 配置路径，例如 'app.port'
      * @param defaultValue 默认值
-     * @returns 配置值
+     * @returns 配置值或默认值，如果路径未找到且无默认值则返回 undefined
      */
-    get<T>(path: string, defaultValue?: T): T;
+    get<T = any>(path: string, defaultValue?: T): T | undefined;
     /**
      * 更新配置
      * @param path 配置路径，例如 'app.port'
      * @param value 新值
      * @returns 是否成功更新
      */
-    set<T>(path: string, value: T): boolean;
+    set<T = any>(path: string, value: T): void;
+    /**
+     * Checks if the ConfigManager has been successfully initialized.
+     * @returns True if initialized, false otherwise.
+     */
+    isInitialized(): boolean;
     /**
      * 重载配置
      * 重新加载配置文件和环境变量
@@ -220,13 +228,10 @@ export declare class ConfigManager {
      * 获取特定服务的配置
      * 用于获取特定服务（如Neo4j、Redis等）的完整配置
      * @param service 服务名称
-     * @returns 服务配置
+     * @returns 服务配置，如果未找到则为 undefined
      */
-    getServiceConfig<T>(service: string): T | null;
+    getServiceConfig<T>(service: string): T | undefined;
 }
-export declare const config: ConfigManager;
-export declare const getConfig: () => AppConfig;
-export declare const getServiceConfig: <T>(service: string) => T | null;
 /**
  * 获取Neo4j知识图谱服务配置
  * 用于知识图谱服务初始化

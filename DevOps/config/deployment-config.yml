@@ -1,0 +1,274 @@
+# BASB 系统部署配置文件
+# 用于定义部署环境、服务配置和资源需求
+
+# 环境配置
+environment:
+  name: production  # 环境名称：development, staging, production
+  region: cn-north  # 部署区域
+  domain: basb.example.com  # 系统域名
+  ssl: true  # 是否启用 SSL
+  backup_enabled: true  # 是否启用自动备份
+  monitoring_enabled: true  # 是否启用监控
+
+# 资源配置
+resources:
+  # 数据库资源
+  mongodb:
+    host: localhost
+    port: 27017
+    database: basb
+    username: basb_user
+    password_env: MONGODB_PASSWORD  # 从环境变量获取密码
+    auth_source: admin
+    replica_set: false  # 是否使用副本集
+    connection_pool_size: 20
+    resources:
+      cpu: 2
+      memory: 4Gi
+      storage: 50Gi
+    backup:
+      schedule: "0 2 * * *"  # 每天凌晨 2 点备份
+      retention_days: 7
+
+  redis:
+    host: localhost
+    port: 6379
+    password_env: REDIS_PASSWORD  # 从环境变量获取密码
+    database: 0
+    resources:
+      cpu: 1
+      memory: 2Gi
+      storage: 10Gi
+
+# 服务配置
+services:
+  # API 服务
+  api:
+    enabled: true
+    port: 3000
+    replicas: 2  # 副本数量
+    resources:
+      cpu: 2
+      memory: 4Gi
+    health_check:
+      path: /health
+      port: 3000
+      initial_delay_seconds: 30
+      period_seconds: 10
+    env:
+      NODE_ENV: production
+      LOG_LEVEL: info
+
+  # 知识图谱服务
+  knowledge_graph:
+    enabled: true
+    port: 3001
+    replicas: 2
+    resources:
+      cpu: 2
+      memory: 4Gi
+    health_check:
+      path: /health
+      port: 3001
+      initial_delay_seconds: 30
+      period_seconds: 10
+    env:
+      NODE_ENV: production
+      LOG_LEVEL: info
+
+  # 文档处理服务
+  document_processor:
+    enabled: true
+    port: 3002
+    replicas: 2
+    resources:
+      cpu: 2
+      memory: 4Gi
+    health_check:
+      path: /health
+      port: 3002
+      initial_delay_seconds: 30
+      period_seconds: 10
+    env:
+      NODE_ENV: production
+      LOG_LEVEL: info
+
+  # 搜索服务
+  search:
+    enabled: true
+    port: 3003
+    replicas: 2
+    resources:
+      cpu: 2
+      memory: 4Gi
+    health_check:
+      path: /health
+      port: 3003
+      initial_delay_seconds: 30
+      period_seconds: 10
+    env:
+      NODE_ENV: production
+      LOG_LEVEL: info
+
+  # AI 服务
+  ai:
+    enabled: true
+    port: 3004
+    replicas: 2
+    resources:
+      cpu: 4
+      memory: 8Gi
+    health_check:
+      path: /health
+      port: 3004
+      initial_delay_seconds: 30
+      period_seconds: 10
+    env:
+      NODE_ENV: production
+      LOG_LEVEL: info
+
+# 网络配置
+networking:
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: basb.example.com
+        paths:
+          - path: /
+            service: api
+            port: 3000
+          - path: /api/knowledge-graph
+            service: knowledge_graph
+            port: 3001
+          - path: /api/document-processor
+            service: document_processor
+            port: 3002
+          - path: /api/search
+            service: search
+            port: 3003
+          - path: /api/ai
+            service: ai
+            port: 3004
+    tls:
+      - secretName: basb-tls
+        hosts:
+          - basb.example.com
+
+# 存储配置
+storage:
+  data:
+    size: 100Gi
+    storageClass: standard
+    accessMode: ReadWriteMany
+  logs:
+    size: 50Gi
+    storageClass: standard
+    accessMode: ReadWriteMany
+  backups:
+    size: 200Gi
+    storageClass: standard
+    accessMode: ReadWriteMany
+
+# 监控配置
+monitoring:
+  prometheus:
+    enabled: true
+    retention: 15d
+    resources:
+      cpu: 1
+      memory: 2Gi
+      storage: 50Gi
+  grafana:
+    enabled: true
+    admin_password_env: GRAFANA_ADMIN_PASSWORD  # 从环境变量获取密码
+    resources:
+      cpu: 1
+      memory: 1Gi
+  alertmanager:
+    enabled: true
+    resources:
+      cpu: 0.5
+      memory: 512Mi
+    receivers:
+      - name: email-notifications
+        email_configs:
+          - to: admin@example.com
+            from: alertmanager@example.com
+            smarthost: smtp.example.com:587
+            auth_username: alertmanager@example.com
+            auth_password_env: SMTP_PASSWORD  # 从环境变量获取密码
+      - name: slack-notifications
+        slack_configs:
+          - api_url_env: SLACK_WEBHOOK_URL  # 从环境变量获取 Webhook URL
+            channel: '#alerts'
+
+# 日志配置
+logging:
+  elasticsearch:
+    enabled: true
+    resources:
+      cpu: 2
+      memory: 4Gi
+      storage: 100Gi
+  kibana:
+    enabled: true
+    resources:
+      cpu: 1
+      memory: 2Gi
+  filebeat:
+    enabled: true
+    resources:
+      cpu: 0.5
+      memory: 512Mi
+
+# 备份配置
+backup:
+  schedule: "0 2 * * *"  # 每天凌晨 2 点备份
+  retention_days: 30
+  storage_location: /backups
+  remote_storage:
+    enabled: true
+    type: s3  # s3, gcs, azure
+    bucket: basb-backups
+    region: cn-north-1
+    credentials_env:
+      access_key: AWS_ACCESS_KEY_ID
+      secret_key: AWS_SECRET_ACCESS_KEY
+
+# 安全配置
+security:
+  network_policies:
+    enabled: true
+  pod_security_policies:
+    enabled: true
+  secrets_management:
+    provider: vault  # vault, kubernetes-secrets
+    vault:
+      address: https://vault.example.com
+      auth_method: kubernetes
+      role: basb
+
+# CI/CD 配置
+cicd:
+  provider: github-actions  # github-actions, jenkins, gitlab-ci
+  deployment_strategy: blue-green  # rolling, blue-green, canary
+  auto_rollback: true
+  approval_required: true
+  environments:
+    - name: staging
+      auto_deploy: true
+    - name: production
+      auto_deploy: false
+      approval_required: true
+
+# 维护配置
+maintenance:
+  update_window: "Sun 01:00-03:00"  # 维护窗口
+  auto_update: false  # 是否自动更新
+  notification:
+    enabled: true
+    email: admin@example.com
+    slack_channel: "#ops"

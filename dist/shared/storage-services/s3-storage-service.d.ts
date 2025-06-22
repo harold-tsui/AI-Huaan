@@ -25,7 +25,6 @@ export interface S3StorageConfig {
  */
 export declare class S3StorageService extends BaseStorageService {
     protected config: S3StorageConfig;
-    protected serviceConfig: any;
     private s3Client;
     private initialized;
     private readonly DEFAULT_PART_SIZE;
@@ -34,7 +33,7 @@ export declare class S3StorageService extends BaseStorageService {
      * 构造函数
      * @param config 配置
      */
-    constructor(config: S3StorageConfig);
+    constructor(s3Config: S3StorageConfig);
     /**
      * 初始化提供者
      */

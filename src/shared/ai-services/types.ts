@@ -203,42 +203,74 @@ export interface IAIRoutingService {
   chatStream(messages: Message[], options?: ChatOptions): AsyncGenerator<ChatStreamEvent, void, unknown>;
 }
 
-// 提示模板接口
+/**
+ * 提示模板对象
+ */
 export interface PromptTemplate {
-  id: string;              // 模板ID
-  name: string;            // 模板名称
-  description: string;     // 描述
-  template: string;        // 模板字符串
-  variables: string[];     // 变量列表
-  defaultValues?: Record<string, string>; // 默认值
-  tags?: string[];         // 标签
-  category?: string;       // 类别
-  version: string;         // 版本
-  created: string;         // 创建时间
-  modified: string;        // 修改时间
+  id: string; // 模板唯一ID
+  name: string; // 模板名称
+  description: string; // 模板描述
+  template: string; // 模板字符串，使用 {{variable}} 格式表示变量
+  variables: string[]; // 模板中使用的变量列表
+  defaultValues?: Record<string, string>; // 变量的默认值
+  tags?: string[]; // 标签，用于分类和搜索
+  category?: string; // 类别
+  version: string; // 版本号
+  created: string; // 创建时间 (ISO 8601)
+  modified: string; // 最后修改时间 (ISO 8601)
+  // 可以根据需要添加更多元数据字段
+  // e.g., author, usageCount, rating, etc.
 }
 
-// 提示管理器接口
+/**
+ * 提示模板管理器接口
+ */
 export interface IPromptManager {
-  // 获取模板
+  /**
+   * 获取指定ID的提示模板
+   * @param id 模板ID
+   * @returns 模板对象或null（如果未找到）
+   */
   getTemplate(id: string): Promise<PromptTemplate | null>;
-  
-  // 创建模板
+
+  /**
+   * 创建新的提示模板
+   * @param template 模板数据 (不包含id, created, modified)
+   * @returns 创建的模板对象
+   */
   createTemplate(template: Omit<PromptTemplate, 'id' | 'created' | 'modified'>): Promise<PromptTemplate>;
-  
-  // 更新模板
+
+  /**
+   * 更新现有的提示模板
+   * @param id 要更新的模板ID
+   * @param template 要更新的模板数据 (部分或全部，不包含id, created, modified)
+   * @returns 更新后的模板对象或null（如果未找到）
+   */
   updateTemplate(id: string, template: Partial<Omit<PromptTemplate, 'id' | 'created' | 'modified'>>): Promise<PromptTemplate | null>;
-  
-  // 删除模板
+
+  /**
+   * 删除指定ID的提示模板
+   * @param id 模板ID
+   * @returns 如果删除成功则为true，否则为false
+   */
   deleteTemplate(id: string): Promise<boolean>;
-  
-  // 列出模板
+
+  /**
+   * 列出所有提示模板，可选择过滤
+   * @param options 可选的过滤条件 (例如，按类别、标签、搜索关键词)
+   * @returns 模板对象数组
+   */
   listTemplates(options?: {
     category?: string;
     tags?: string[];
     search?: string;
   }): Promise<PromptTemplate[]>;
-  
-  // 渲染模板
-  renderTemplate(templateIdOrString: string, variables: Record<string, string>): Promise<string>;
+
+  /**
+   * 渲染指定ID的提示模板
+   * @param id 模板ID
+   * @param data 用于填充模板变量的数据对象
+   * @returns 渲染后的提示字符串或null（如果模板未找到或渲染失败）
+   */
+  renderTemplate(id: string, data: Record<string, any>): Promise<string | null>;
 }

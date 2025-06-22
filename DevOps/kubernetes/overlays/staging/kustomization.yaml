@@ -1,0 +1,63 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+nameSuffix: -staging
+
+namespace: basb-staging
+
+commonLabels:
+  environment: staging
+
+commonAnnotations:
+  environment: staging
+  contact: "devops@basb-system.com"
+
+replicas:
+  - name: basb-api-service
+    count: 1
+  - name: basb-knowledge-graph
+    count: 1
+  - name: basb-document-processing
+    count: 1
+  - name: basb-search
+    count: 1
+  - name: basb-ai-service
+    count: 1
+  - name: basb-frontend
+    count: 1
+
+images:
+  - name: basb/api
+    newTag: staging
+  - name: basb/knowledge-graph
+    newTag: staging
+  - name: basb/document-processing
+    newTag: staging
+  - name: basb/search
+    newTag: staging
+  - name: basb/ai
+    newTag: staging
+  - name: basb/frontend
+    newTag: staging
+
+patchesStrategicMerge:
+  - patches/ingress-patch.yaml
+  - patches/resources-patch.yaml
+  - patches/config-patch.yaml
+
+configMapGenerator:
+  - name: basb-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - LOG_LEVEL=debug
+
+secretGenerator:
+  - name: basb-secrets
+    behavior: merge
+    literals:
+      - MONGODB_URI=mongodb://basb_user:staging-password@mongodb-staging:27017/basb
+      - REDIS_URI=redis://:staging-password@redis-staging:6379/0

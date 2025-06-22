@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: basb-config
+data:
+  # 环境配置
+  NODE_ENV: "staging"
+  LOG_LEVEL: "debug"
+  
+  # API 服务配置
+  API_RATE_LIMIT: "200"
+  API_TIMEOUT: "60000"
+  API_CORS_ORIGIN: "*"
+  
+  # 知识图谱服务配置
+  KNOWLEDGE_GRAPH_MAX_NODES: "20000"
+  KNOWLEDGE_GRAPH_MAX_LINKS: "100000"
+  
+  # 文档处理服务配置
+  DOCUMENT_MAX_SIZE: "100MB"
+  
+  # 搜索服务配置
+  SEARCH_INDEX_REFRESH_INTERVAL: "10m"
+  SEARCH_MAX_RESULTS: "200"
+  
+  # AI 服务配置
+  AI_REQUEST_TIMEOUT: "120000"
+  
+  # 监控配置
+  METRICS_COLLECTION_INTERVAL: "10s"
+  
+  # 日志配置
+  LOG_FORMAT: "json"
+  LOG_RETENTION_DAYS: "15"
+  
+  # 缓存配置
+  CACHE_TTL: "1800"
+  CACHE_CHECK_PERIOD: "300"
+  
+  # 会话配置
+  SESSION_TTL: "43200"
+  
+  # 业务配置
+  MAX_NOTES_PER_USER: "20000"
+  MAX_TAGS_PER_USER: "1000"
+  MAX_PROJECTS_PER_USER: "200"
+  MAX_DOCUMENTS_PER_USER: "2000"

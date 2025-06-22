@@ -362,7 +362,7 @@ export class WebProcessor implements ICaptureProcessor {
           ? messageContent[0]?.text || '{}'
           : messageContent?.text || '{}';
 
-        return JSON.parse(contentText);
+        return JSON.parse(contentText) as { structure: string; headings: string[]; mainContent: string; navigation: string[]; };
       } catch (parseError) {
         this.logger.error('Failed to parse web page structure response', { error: parseError instanceof Error ? parseError : String(parseError) });
         return { structure: '', headings: [], mainContent: '', navigation: [] };

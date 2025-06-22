@@ -30,6 +30,10 @@ class MCPServiceRegistry {
      * 注销服务
      * @param serviceId 服务ID
      */
+    unregisterAll() {
+        this.services.clear();
+        this.logger.info('All services unregistered.');
+    }
     unregisterService(serviceId) {
         if (this.services.has(serviceId)) {
             const service = this.services.get(serviceId);

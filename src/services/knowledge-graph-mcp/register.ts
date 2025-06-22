@@ -21,4 +21,4 @@ export function registerKnowledgeGraphMCPService(): void {
 }
 
 // 自动注册服务
-registerKnowledgeGraphMCPService();
+// registerKnowledgeGraphMCPService(); // 改为在 register-services.ts 中显式调用

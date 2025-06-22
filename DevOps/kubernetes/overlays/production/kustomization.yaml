@@ -1,0 +1,62 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: basb-production
+
+commonLabels:
+  environment: production
+
+commonAnnotations:
+  environment: production
+  contact: "devops@basb-system.com"
+
+replicas:
+  - name: basb-api-service
+    count: 3
+  - name: basb-knowledge-graph
+    count: 3
+  - name: basb-document-processing
+    count: 3
+  - name: basb-search
+    count: 3
+  - name: basb-ai-service
+    count: 3
+  - name: basb-frontend
+    count: 3
+
+images:
+  - name: basb/api
+    newTag: production
+  - name: basb/knowledge-graph
+    newTag: production
+  - name: basb/document-processing
+    newTag: production
+  - name: basb/search
+    newTag: production
+  - name: basb/ai
+    newTag: production
+  - name: basb/frontend
+    newTag: production
+
+patchesStrategicMerge:
+  - patches/ingress-patch.yaml
+  - patches/resources-patch.yaml
+  - patches/config-patch.yaml
+  - patches/hpa-patch.yaml
+
+configMapGenerator:
+  - name: basb-config
+    behavior: merge
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+
+secretGenerator:
+  - name: basb-secrets
+    behavior: merge
+    literals:
+      - MONGODB_URI=mongodb://basb_user:production-password@mongodb:27017/basb
+      - REDIS_URI=redis://:production-password@redis:6379/0

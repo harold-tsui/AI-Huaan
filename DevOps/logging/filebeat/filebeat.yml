@@ -1,0 +1,89 @@
+# Filebeat 配置文件
+
+# 输入设置
+filebeat.inputs:
+  # API 服务日志
+  - type: container
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+      - add_kubernetes_metadata: ~
+    exclude_files: ['filebeat', 'elasticsearch', 'kibana']
+    json.keys_under_root: true
+    json.add_error_key: true
+    json.message_key: log
+
+  # 系统日志
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/*.log
+      - /var/log/syslog
+    fields:
+      log_type: system
+    fields_under_root: true
+
+# 处理器设置
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_kubernetes_metadata: ~
+  - decode_json_fields:
+      fields: ["message"]
+      target: ""
+      overwrite_keys: true
+  - drop_event:
+      when:
+        regexp:
+          message: "^\\s*$"
+  - add_fields:
+      target: ""
+      fields:
+        environment: ${ENVIRONMENT:production}
+        application: "basb"
+
+# 输出设置
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  username: ${ELASTICSEARCH_USERNAME}
+  password: ${ELASTICSEARCH_PASSWORD}
+  index: "basb-logs-%{+yyyy.MM.dd}"
+  ssl.enabled: true
+  ssl.verification_mode: certificate
+
+# 索引模板设置
+setup.template.name: "basb-logs"
+setup.template.pattern: "basb-logs-*"
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+  index.refresh_interval: "5s"
+
+# 仪表盘设置
+setup.dashboards.enabled: true
+setup.dashboards.directory: "/usr/share/filebeat/kibana/dashboards"
+
+# Kibana 设置
+setup.kibana:
+  host: "kibana:5601"
+  username: ${KIBANA_USERNAME}
+  password: ${KIBANA_PASSWORD}
+
+# 日志设置
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644
+
+# 监控设置
+monitoring.enabled: true
+monitoring.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  username: ${ELASTICSEARCH_USERNAME}
+  password: ${ELASTICSEARCH_PASSWORD}

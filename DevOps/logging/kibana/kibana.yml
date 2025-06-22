@@ -1,0 +1,63 @@
+# Kibana 配置文件
+
+# 服务器设置
+server.name: basb-kibana
+server.host: "0.0.0.0"
+server.port: 5601
+
+# Elasticsearch 连接设置
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+elasticsearch.username: kibana_system
+elasticsearch.password: ${KIBANA_PASSWORD}
+
+# 安全设置
+xpack.security.enabled: true
+xpack.encryptedSavedObjects.encryptionKey: ${KIBANA_ENCRYPTION_KEY}
+
+# 监控设置
+monitoring.ui.container.elasticsearch.enabled: true
+
+# 日志设置
+logging.root.level: info
+logging.appenders.file.type: file
+logging.appenders.file.fileName: /var/log/kibana/kibana.log
+logging.appenders.file.layout.type: json
+
+# 索引模式设置
+kibana.index: ".kibana"
+
+# 默认路由设置
+server.defaultRoute: "/app/dashboards"
+
+# 语言设置
+i18n.locale: "zh-CN"
+
+# 保存的对象设置
+savedObjects.maxImportPayloadBytes: 10485760
+
+# 报告设置
+xpack.reporting.enabled: true
+xpack.reporting.kibanaServer.hostname: "localhost"
+xpack.reporting.capture.browser.chromium.disableSandbox: true
+
+# 告警设置
+xpack.alerting.enabled: true
+
+# 可视化设置
+xpack.canvas.enabled: true
+xpack.graph.enabled: true
+
+# 仪表盘设置
+dashboard.hideWriteControls: false
+
+# 空闲超时设置
+server.maxPayloadBytes: 1048576
+server.keepaliveTimeout: 120000
+
+# CORS 设置
+server.cors.enabled: true
+server.cors.origin: ["*"]
+
+# 代理设置
+server.basePath: ""
+server.rewriteBasePath: false

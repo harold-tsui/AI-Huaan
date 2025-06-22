@@ -11,19 +11,15 @@ import { CaptureItem, CaptureItemProcessingResult } from './types';
  * 网页捕获处理器
  */
 export declare class WebCaptureProcessor extends BaseCaptureProcessor {
-    private aiService?;
-    private knowledgeGraphService?;
-    /**
-     * 构造函数
-     * @param aiService AI服务
-     * @param knowledgeGraphService 知识图谱服务
-     */
-    constructor(aiService?: IAIService, knowledgeGraphService?: IKnowledgeGraphService);
+    private aiService;
+    private knowledgeGraphService;
+    constructor(aiService: IAIService | null, knowledgeGraphService: IKnowledgeGraphService);
     /**
      * 处理网页内容
      * @param item 捕获项
      */
-    protected processWebContent(item: CaptureItem): Promise<CaptureItemProcessingResult>;
+    process(item: CaptureItem): Promise<CaptureItemProcessingResult>;
+    protected processWebContent(item: CaptureItem, aiService?: IAIService, knowledgeGraphService?: IKnowledgeGraphService): Promise<CaptureItemProcessingResult>;
     /**
      * 获取网页内容
      * @param url 网页URL

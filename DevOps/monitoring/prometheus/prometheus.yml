@@ -1,0 +1,111 @@
+# BASB 系统 Prometheus 配置文件
+# 文件路径: monitoring/prometheus/prometheus.yml
+
+global:
+  scrape_interval: 15s     # 默认抓取间隔，15秒一次
+  evaluation_interval: 15s # 评估规则的间隔，15秒一次
+  scrape_timeout: 10s      # 抓取超时时间
+
+  # 附加到所有时间序列和告警的标签
+  external_labels:
+    monitor: 'basb-monitor'
+
+# 告警管理器配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+# 规则文件，可以包含记录规则和告警规则
+rule_files:
+  - 'rules/*.yml'
+
+# 抓取配置
+scrape_configs:
+  # Prometheus 自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API 服务监控
+  - job_name: 'api'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['api:3000']
+        labels:
+          service: 'api'
+
+  # 知识图谱服务监控
+  - job_name: 'knowledge-graph'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['knowledge-graph:3001']
+        labels:
+          service: 'knowledge-graph'
+
+  # 文档处理服务监控
+  - job_name: 'document-processor'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['document-processor:3002']
+        labels:
+          service: 'document-processor'
+
+  # 搜索服务监控
+  - job_name: 'search'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['search:3003']
+        labels:
+          service: 'search'
+
+  # AI 服务监控
+  - job_name: 'ai'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['ai:3004']
+        labels:
+          service: 'ai'
+
+  # Node Exporter 监控（主机指标）
+  - job_name: 'node'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'basb-host'
+
+  # cAdvisor 监控（容器指标）
+  - job_name: 'cadvisor'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # MongoDB Exporter 监控
+  - job_name: 'mongodb'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['mongodb-exporter:9216']
+        labels:
+          instance: 'mongodb'
+
+  # Redis Exporter 监控
+  - job_name: 'redis'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          instance: 'redis'
+
+  # Nginx Exporter 监控
+  - job_name: 'nginx'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          instance: 'nginx'

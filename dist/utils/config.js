@@ -39,20 +39,20 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getServiceConfig = exports.getConfig = exports.config = exports.ConfigManager = void 0;
+exports.ConfigManager = exports.config = void 0;
 exports.getNeo4jConfig = getNeo4jConfig;
 exports.validateNeo4jConfig = validateNeo4jConfig;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const dotenv = __importStar(require("dotenv"));
-const logger_1 = require("./logger");
+const logger_1 = require("./logger"); // Added getGlobalLogger and LogLevel
 // 默认配置
-const defaultConfig = {
+exports.config = {
     app: {
         name: 'BASB',
         version: '1.0.0',
         environment: 'development',
-        port: 3000,
+        port: 8081, // Changed port from 8080 to 8081
         host: 'localhost',
         baseUrl: 'http://localhost:3000',
     },
@@ -121,21 +121,77 @@ const defaultConfig = {
  * 负责加载、验证、管理和持久化应用配置
  */
 class ConfigManager {
-    constructor() {
+    constructor(configFilePath) {
         this.initialized = false;
-        this.logger = new logger_1.Logger('ConfigManager');
-        this.config = this.loadConfig();
-        this.validateConfig();
-        this.initialized = true;
-        this.logger.info('Configuration manager initialized successfully');
+        this.configFilePath = configFilePath;
+        console.log('[ConfigManager.constructor] Entry. Initialized:', this.initialized);
+        try {
+            // Step 1: Load environment variables first (uses console.log)
+            console.log('[ConfigManager.constructor] Before loadEnv. Initialized:', this.initialized);
+            this.loadEnv();
+            console.log('[ConfigManager.constructor] After loadEnv. Initialized:', this.initialized);
+            // Step 2: Initialize logger FIRST (even before full config, it uses global defaults or its own internal defaults)
+            console.log('[ConfigManager.constructor] Before new Logger. Initialized:', this.initialized);
+            this.logger = new logger_1.Logger('ConfigManager');
+            // At this point, logger might be using default settings from logger.ts if config.logging is not yet processed.
+            // This is acceptable for early stage logging within ConfigManager itself.
+            this.logger.info('[ConfigManager] Logger initialized. Proceeding with config loading...');
+            console.log('[ConfigManager.constructor] After new Logger. Initialized:', this.initialized);
+            // Step 3: Initialize config with defaults
+            console.log('[ConfigManager.constructor] Before defaultConfig assignment. Initialized:', this.initialized);
+            this.config = JSON.parse(JSON.stringify(exports.config));
+            console.log('[ConfigManager.constructor] After defaultConfig assignment. Initialized:', this.initialized);
+            // Step 4: Load and merge config file, then apply env overrides
+            console.log('[ConfigManager.constructor] Before loadConfigFromFile. Initialized:', this.initialized);
+            this.loadConfigFromFile(); // This internally calls applyEnvOverrides
+            console.log('[ConfigManager.constructor] After loadConfigFromFile. Initialized:', this.initialized);
+            // Step 5: Validate the final config
+            try {
+                console.log('[ConfigManager.constructor] Before validateConfig. Current Initialized:', this.initialized);
+                this.validateConfig();
+                // Logger should be available here if validation passed
+                const logInfo = this.logger ? this.logger.info.bind(this.logger) : console.log;
+                logInfo('[ConfigManager] Configuration validated successfully');
+                // Step 6: Mark as initialized AFTER successful validation
+                console.log('[ConfigManager.constructor] Before this.initialized = true (post-validation). Current Initialized:', this.initialized);
+                this.initialized = true;
+                console.log('[ConfigManager.constructor] After this.initialized = true (post-validation). Current Initialized:', this.initialized);
+            }
+            catch (error) {
+                this.initialized = false; // Ensure initialized state is false on validation failure
+                const logError = this.logger ? this.logger.error.bind(this.logger) : console.error;
+                logError('[ConfigManager] Configuration validation failed', {
+                    error: error instanceof Error ? error.message : String(error),
+                    stack: error instanceof Error ? error.stack : undefined
+                });
+                throw error; // Re-throw to be caught by outer try-catch
+            }
+        }
+        catch (error) {
+            // If any step fails, ensure we're not marked as initialized
+            this.initialized = false;
+            // Use logger if available, otherwise fallback to console
+            const logError = this.logger ? this.logger.error.bind(this.logger) : console.error;
+            logError('[ConfigManager] Failed to initialize configuration manager', {
+                error: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined
+            });
+            throw error; // Propagate the error
+        }
     }
-    /**
-     * 获取配置管理实例
-     * @returns 配置管理实例
-     */
     static getInstance() {
         if (!ConfigManager.instance) {
-            ConfigManager.instance = new ConfigManager();
+            try {
+                ConfigManager.instance = new ConfigManager();
+            }
+            catch (error) {
+                // It's crucial to log this error, as it might not be caught elsewhere if it happens during static initialization.
+                console.error(`[ConfigManager.getInstance] CRITICAL - Failed to create ConfigManager instance: ${(error instanceof Error ? error.message : String(error))}`, error);
+                // Depending on the application's needs, you might want to throw a more specific error
+                // or allow the application to attempt to run in a degraded state if some default config can be used.
+                // For now, re-throwing ensures the application doesn't proceed with an uninitialized/badly initialized ConfigManager.
+                throw new Error(`CRITICAL - Failed to initialize ConfigManager: ${(error instanceof Error ? error.message : String(error))}`);
+            }
         }
         return ConfigManager.instance;
     }
@@ -144,54 +200,66 @@ class ConfigManager {
      * @throws 如果配置管理器未初始化则抛出错误
      */
     ensureInitialized() {
+        // CRITICAL DEBUG LOG: Do not remove without careful consideration.
+        console.log(`[ConfigManager.ensureInitialized ENTRY] initialized: ${this.initialized}, instance exists: ${!!ConfigManager.instance}`);
+        const currentStack = new Error().stack;
+        console.log(`[ConfigManager.ensureInitialized STACK]:\n${currentStack}`);
+        console.log('[ConfigManager.ensureInitialized] Check: this.initialized =', this.initialized);
         if (!this.initialized) {
+            console.error('[ConfigManager.ensureInitialized] ERROR: Not initialized!');
             throw new Error('Configuration manager is not initialized');
         }
     }
     /**
-     * 加载配置
-     * @returns 应用配置
-     */
-    loadConfig() {
-        // 加载环境变量
-        this.loadEnv();
-        // 合并默认配置和环境变量配置
-        const config = this.mergeWithEnvVars(defaultConfig);
-        // 加载配置文件（如果存在）
-        const configFilePath = process.env.CONFIG_FILE || path.resolve(process.cwd(), 'config.json');
-        if (fs.existsSync(configFilePath)) {
-            try {
-                const fileConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
-                this.deepMerge(config, fileConfig);
-                this.logger.info(`Loaded configuration from ${configFilePath}`);
-            }
-            catch (error) {
-                this.logger.error(`Failed to load configuration from ${configFilePath}`, { error: error instanceof Error ? error : String(error) });
-            }
-        }
-        return config;
-    }
-    /**
-     * 加载环境变量
+     * 加载环境变量 (.env file)
+     * This method is called early in the constructor.
+     * It uses console for logging as this.logger might not be initialized yet.
      */
     loadEnv() {
-        // 尝试加载.env文件
         const envPath = path.resolve(process.cwd(), '.env');
         if (fs.existsSync(envPath)) {
             dotenv.config({ path: envPath });
-            this.logger.info(`Loaded environment variables from ${envPath}`);
+            // Use console.log as logger might not be initialized or configured yet.
+            console.log(`[ConfigManager/loadEnv] Loaded environment variables from ${envPath}`);
         }
         else {
-            this.logger.info('No .env file found, using system environment variables');
+            console.log('[ConfigManager/loadEnv] No .env file found, using system environment variables.');
         }
     }
     /**
-     * 将环境变量合并到配置中
-     * @param defaultConfig 默认配置
-     * @returns 合并后的配置
+     * Loads configuration from a JSON file and merges it into this.config.
+     * this.config should already be initialized with defaults before this method is called.
+     * It then calls applyEnvOverrides to ensure environment variables take precedence.
+     * Uses this.logger for logging, assuming it's initialized.
      */
-    mergeWithEnvVars(defaultConfig) {
-        const config = JSON.parse(JSON.stringify(defaultConfig));
+    loadConfigFromFile() {
+        const configFilePathToLoad = this.configFilePath || process.env.CONFIG_FILE || path.resolve(process.cwd(), 'config.json');
+        const logInfo = this.logger ? this.logger.info.bind(this.logger) : console.log;
+        const logError = this.logger ? this.logger.error.bind(this.logger) : console.error;
+        if (fs.existsSync(configFilePathToLoad)) {
+            try {
+                const fileConfigStr = fs.readFileSync(configFilePathToLoad, 'utf8');
+                const fileConfig = JSON.parse(fileConfigStr);
+                this.deepMerge(this.config, fileConfig); // Merge file config into this.config (which has defaults)
+                logInfo(`[ConfigManager/loadConfigFromFile] Loaded and merged configuration from ${configFilePathToLoad}`);
+            }
+            catch (error) {
+                logError(`[ConfigManager/loadConfigFromFile] Failed to load or parse configuration from ${configFilePathToLoad}`, { error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined });
+            }
+        }
+        else {
+            logInfo(`[ConfigManager/loadConfigFromFile] Configuration file not found at ${configFilePathToLoad}. Using defaults and environment variables.`);
+        }
+        // After loading defaults and file (if any), apply environment variable overrides.
+        this.applyEnvOverrides();
+    }
+    /**
+     * Applies environment variable overrides to this.config.
+     * This method is called after defaults and file configurations are loaded.
+     * Modifies this.config in place.
+     */
+    applyEnvOverrides() {
+        const config = this.config; // Alias for convenience, modifies this.config directly
         // 应用配置
         if (process.env.APP_NAME)
             config.app.name = process.env.APP_NAME;
@@ -351,7 +419,32 @@ class ConfigManager {
             config.cache.ttl = parseInt(process.env.CACHE_TTL);
         if (process.env.CACHE_CHECK_PERIOD)
             config.cache.checkPeriod = parseInt(process.env.CACHE_CHECK_PERIOD);
-        return config;
+        // MCP服务配置
+        // 示例环境变量: MCP_SERVICE_OBSIDIAN_CONFIG='{"url":"http://localhost:27123","apiKey":"your_api_key"}'
+        // MCP_SERVICE_MYCUSTOMSERVICE_CONFIG='{"param1":"value1"}'
+        config.mcp.services = {}; // Initialize as an empty object
+        for (const envVar in process.env) {
+            if (envVar.startsWith('MCP_SERVICE_') && envVar.endsWith('_CONFIG')) {
+                const serviceName = envVar.substring('MCP_SERVICE_'.length, envVar.length - '_CONFIG'.length).toLowerCase();
+                const serviceConfigJson = process.env[envVar];
+                if (serviceConfigJson) {
+                    try {
+                        const serviceConfig = JSON.parse(serviceConfigJson);
+                        config.mcp.services[serviceName] = serviceConfig;
+                        const logger = this.logger;
+                        // Assuming logger is initialized by the time applyEnvOverrides is called
+                        const logFn = logger ? logger.info.bind(logger) : console.log;
+                        logFn(`[ConfigManager] Loaded MCP service configuration for '${serviceName}' from environment variable ${envVar}`);
+                    }
+                    catch (error) {
+                        const logger = this.logger;
+                        // Assuming logger is initialized by the time applyEnvOverrides is called
+                        const logErrorFn = logger ? logger.error.bind(logger) : console.error;
+                        logErrorFn(`[ConfigManager] Failed to parse MCP service configuration for '${serviceName}' from environment variable ${envVar}`, { error: error instanceof Error ? error : String(error), value: serviceConfigJson });
+                    }
+                }
+            }
+        }
     }
     /**
      * 深度合并对象
@@ -373,57 +466,117 @@ class ConfigManager {
      * 检查必要的配置项是否存在且有效
      * @throws 如果配置无效则抛出错误
      */
+    _getConfigValueAtPath(obj, path) {
+        const keys = path.split('.');
+        let current = obj;
+        for (const key of keys) {
+            if (current === undefined || current === null || typeof current !== 'object') {
+                // If logger is available and path is not for logging itself (to avoid recursion)
+                if (this.logger && !path.startsWith('logging')) {
+                    this.logger.debug(`_getConfigValueAtPath: Path '${path}' not found or not an object at '${key}'.`);
+                }
+                else if (!path.startsWith('logging')) {
+                    console.debug(`[ConfigManager/_getConfigValueAtPath/pre-logger] Path '${path}' not found at '${key}'.`);
+                }
+                return undefined;
+            }
+            current = current[key];
+        }
+        return current;
+    }
     validateConfig() {
+        // Validation now uses this.config directly via _getConfigValueAtPath helper
         // 验证应用基础配置
         this.validateRequiredFields('app', ['name', 'port', 'environment']);
         // 验证数据库配置
         this.validateRequiredFields('database.postgres', ['host', 'port', 'username', 'database']);
         this.validateRequiredFields('database.redis', ['host', 'port']);
         // 验证Neo4j配置（如果存在）
-        if (this.config.database.neo4j) {
+        if (this._getConfigValueAtPath(this.config, 'database.neo4j')) {
             this.validateRequiredFields('database.neo4j', ['uri', 'username', 'password']);
             // 验证Neo4j向量搜索配置（如果启用）
-            if (this.config.database.neo4j.vectorSearch?.enabled) {
+            if (this._getConfigValueAtPath(this.config, 'database.neo4j.vectorSearch.enabled')) {
                 this.validateRequiredFields('database.neo4j.vectorSearch', ['dimension', 'similarity']);
             }
         }
         // 验证存储配置
         this.validateRequiredFields('storage', ['type', 'basePath']);
         // 验证S3配置（如果使用S3存储）
-        if (this.config.storage.type === 's3' || this.config.storage.type === 'minio') {
-            if (!this.config.storage.s3) {
-                throw new Error('S3 configuration is required when storage type is s3 or minio');
+        const storageType = this._getConfigValueAtPath(this.config, 'storage.type');
+        if (storageType === 's3' || storageType === 'minio') {
+            if (!this._getConfigValueAtPath(this.config, 'storage.s3')) {
+                throw new Error('S3 configuration (storage.s3) is required when storage.type is s3 or minio');
             }
             this.validateRequiredFields('storage.s3', ['bucket', 'region', 'accessKey', 'secretKey']);
         }
-        // 验证安全配置
-        this.validateRequiredFields('security.jwt', ['secret', 'expiresIn']);
-        this.validateRequiredFields('security.encryption', ['algorithm', 'key']);
-        // 验证生产环境的安全配置
-        if (this.config.app.environment === 'production') {
-            if (this.config.security.jwt.secret === 'change-me-in-production') {
-                this.logger.warn('Using default JWT secret in production environment');
-            }
-            if (this.config.security.encryption.key === 'change-me-in-production-32-chars-key') {
-                this.logger.warn('Using default encryption key in production environment');
-            }
+        const currentLogLevel = this._getConfigValueAtPath(this.config, 'logging.level');
+        if (!Object.values(logger_1.LogLevel).includes(currentLogLevel)) {
+            throw new Error(`Invalid logging.level: ${currentLogLevel}. Must be one of ${Object.values(logger_1.LogLevel).join(', ')}`);
         }
-        this.logger.debug('Configuration validation completed');
+        // 验证安全配置
+        this.validateRequiredFields('security.jwt', ['secret', 'expiresIn', 'refreshExpiresIn']);
+        this.validateRequiredFields('security.encryption', ['algorithm', 'key']);
+        // 验证AI配置
+        this.validateRequiredFields('ai.routing', ['defaultProvider', 'fallbackProvider']);
+        // 验证特定AI提供商的配置（如果已定义）
+        if (this._getConfigValueAtPath(this.config, 'ai.openai')) {
+            this.validateRequiredFields('ai.openai', ['apiKey', 'models']);
+            this.validateRequiredFields('ai.openai.models', ['embedding', 'completion']);
+        }
+        if (this._getConfigValueAtPath(this.config, 'ai.anthropic')) {
+            this.validateRequiredFields('ai.anthropic', ['apiKey', 'models']);
+            this.validateRequiredFields('ai.anthropic.models', ['completion']);
+        }
+        if (this._getConfigValueAtPath(this.config, 'ai.local')) {
+            this.validateRequiredFields('ai.local', ['endpoint', 'models']);
+        }
+        // 验证日志格式
+        const validLogFormats = ['json', 'simple', 'detailed'];
+        const currentLogFormat = this._getConfigValueAtPath(this.config, 'logging.format');
+        if (!validLogFormats.includes(currentLogFormat)) {
+            throw new Error(`Invalid logging.format: ${currentLogFormat}. Must be one of ${validLogFormats.join(', ')}`);
+        }
+        // 验证环境
+        const validEnvironments = ['development', 'test', 'production'];
+        const currentEnvironment = this._getConfigValueAtPath(this.config, 'app.environment');
+        if (!validEnvironments.includes(currentEnvironment)) {
+            throw new Error(`Invalid app.environment: ${currentEnvironment}. Must be one of ${validEnvironments.join(', ')}`);
+        }
+        // 验证存储类型
+        const validStorageTypes = ['local', 's3', 'minio'];
+        const currentStorageType = this._getConfigValueAtPath(this.config, 'storage.type');
+        if (!validStorageTypes.includes(currentStorageType)) {
+            throw new Error(`Invalid storage.type: ${currentStorageType}. Must be one of ${validStorageTypes.join(', ')}`);
+        }
+        // 验证AI提供商
+        const validAiProviders = ['openai', 'anthropic', 'local'];
+        const defaultProvider = this._getConfigValueAtPath(this.config, 'ai.routing.defaultProvider');
+        const fallbackProvider = this._getConfigValueAtPath(this.config, 'ai.routing.fallbackProvider');
+        if (!validAiProviders.includes(defaultProvider)) {
+            throw new Error(`Invalid ai.routing.defaultProvider: ${defaultProvider}. Must be one of ${validAiProviders.join(', ')}`);
+        }
+        if (!validAiProviders.includes(fallbackProvider)) {
+            throw new Error(`Invalid ai.routing.fallbackProvider: ${fallbackProvider}. Must be one of ${validAiProviders.join(', ')}`);
+        }
+        const logInfo = this.logger ? this.logger.info.bind(this.logger) : console.log;
+        logInfo('[ConfigManager/validateConfig] Configuration validation passed.');
     }
     /**
-     * 验证必要的配置字段
-     * @param path 配置路径
-     * @param fields 必要的字段
-     * @throws 如果必要的字段不存在则抛出错误
+     * 验证指定路径下的必需字段
+     * @param basePath 基础路径
+     * @param fields 字段列表
+     * @throws 如果字段缺失或无效则抛出错误
      */
-    validateRequiredFields(path, fields) {
-        const section = this.get(path);
-        if (!section) {
-            throw new Error(`Configuration section '${path}' is missing`);
-        }
+    validateRequiredFields(basePath, fields) {
+        // Validation now uses this.config directly via _getConfigValueAtPath helper
         for (const field of fields) {
-            if (section[field] === undefined || section[field] === null) {
-                throw new Error(`Required configuration field '${path}.${field}' is missing`);
+            const fullPath = `${basePath}.${field}`;
+            const value = this._getConfigValueAtPath(this.config, fullPath);
+            if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
+                const errorMessage = `Missing or invalid required configuration field: ${fullPath}`;
+                const logError = this.logger ? this.logger.error.bind(this.logger) : console.error;
+                logError(`[ConfigManager/validateRequiredFields] ${errorMessage}`);
+                throw new Error(errorMessage);
             }
         }
     }
@@ -439,22 +592,63 @@ class ConfigManager {
      * 获取特定配置项
      * @param path 配置路径，例如 'app.port'
      * @param defaultValue 默认值
-     * @returns 配置值
+     * @returns 配置值或默认值，如果路径未找到且无默认值则返回 undefined
      */
     get(path, defaultValue) {
-        this.ensureInitialized();
-        const parts = path.split('.');
+        // CRITICAL DEBUG LOG: Do not remove without careful consideration.
+        // console.log(`[ConfigManager.get ENTRY] path: ${path}, initialized: ${this.initialized}, instance exists: ${!!ConfigManager.instance}`);
+        // const currentStack = new Error().stack;
+        // console.log(`[ConfigManager.get STACK]:\n${currentStack}`);
+        // 允许在初始化完成前访问日志配置，因为日志本身可能需要配置
+        if (path.startsWith('logging.') || path === 'app.environment') {
+            // console.log(`[ConfigManager.get] Early access for logging or environment: ${path}`);
+        }
+        else {
+            // 对于其他所有配置，确保已初始化
+            this.ensureInitialized();
+        }
+        const logger = this.logger; // Type assertion
         let current = this.config;
-        for (const part of parts) {
-            if (current === undefined || current === null) {
-                this.logger.debug(`Configuration path '${path}' not found, using default value`, { defaultValue });
+        const segments = path.split('.');
+        for (const segment of segments) {
+            if (current && typeof current === 'object' && segment in current) {
+                current = current[segment];
+            }
+            else {
+                // 如果路径无效或值不存在
+                if (defaultValue === undefined) {
+                    // 如果没有提供默认值，则根据情况记录警告或错误
+                    const message = `[ConfigManager.get] Configuration value at '${path}' is undefined and no default value provided.`;
+                    // Use asserted logger or console if early access
+                    if (path.startsWith('logging.') || path === 'app.environment') {
+                        console.warn(message);
+                    }
+                    else {
+                        logger.warn(message);
+                    }
+                    return undefined; // 或者可以抛出错误，取决于严格性要求
+                }
+                // 使用默认值
+                // Log this only if logger is available and initialized, or use console for early access
+                if (path.startsWith('logging.') || path === 'app.environment') {
+                    console.debug(`[ConfigManager.get] Configuration value at '${path}' is undefined, using default value`, { defaultValue });
+                }
+                else if (this.initialized) { // Check this.initialized as well for non-early access
+                    logger.debug(`Configuration value at '${path}' is undefined, using default value`, { defaultValue });
+                }
+                else {
+                    // Fallback for very early stage before full initialization but not logging path
+                    console.debug(`[ConfigManager.get] Pre-init access for '${path}', using default. Value undefined.`);
+                }
                 return defaultValue;
             }
-            current = current[part];
         }
-        if (current === undefined || current === null) {
-            this.logger.debug(`Configuration value at '${path}' is null or undefined, using default value`, { defaultValue });
-            return defaultValue;
+        // If loop completes, current holds the value. Log before returning.
+        if (path.startsWith('logging.') || path === 'app.environment') {
+            console.debug(`[ConfigManager.get("${path}")] returning. Value defined: ${current !== undefined && current !== null}`);
+        }
+        else {
+            logger.debug(`[ConfigManager.get("${path}")] returning. Value defined: ${current !== undefined && current !== null}`);
         }
         return current;
     }
@@ -466,26 +660,31 @@ class ConfigManager {
      */
     set(path, value) {
         this.ensureInitialized();
-        try {
-            const parts = path.split('.');
-            let current = this.config;
-            for (let i = 0; i < parts.length - 1; i++) {
-                const part = parts[i];
-                if (!(part in current)) {
-                    current[part] = {};
-                }
-                current = current[part];
+        const keys = path.split('.');
+        let current = this.config; // Start with 'any' for flexible property access
+        for (let i = 0; i < keys.length - 1; i++) {
+            const key = keys[i];
+            if (!(key in current) || typeof current[key] !== 'object' || current[key] === null) {
+                current[key] = {};
             }
-            const lastPart = parts[parts.length - 1];
-            const oldValue = current[lastPart];
-            current[lastPart] = value;
+            current = current[key];
+        }
+        const lastKey = keys[keys.length - 1];
+        const oldValue = current[lastKey];
+        current[lastKey] = value;
+        if (this.logger) {
             this.logger.debug(`Configuration updated: ${path}`, { oldValue, newValue: value });
-            return true;
         }
-        catch (error) {
-            this.logger.error(`Failed to update configuration at ${path}`, { error: error instanceof Error ? error : String(error), value });
-            return false;
+        else {
+            console.debug(`[ConfigManager.set] Configuration updated: ${path}`, { oldValue, newValue: value });
         }
+    }
+    /**
+     * Checks if the ConfigManager has been successfully initialized.
+     * @returns True if initialized, false otherwise.
+     */
+    isInitialized() {
+        return this.initialized;
     }
     /**
      * 重载配置
@@ -494,14 +693,34 @@ class ConfigManager {
      */
     reload() {
         try {
-            this.logger.info('Reloading configuration');
-            this.config = this.loadConfig();
-            this.validateConfig();
-            this.logger.info('Configuration reloaded successfully');
+            if (this.logger) {
+                this.logger.info('Reloading configuration');
+            }
+            else {
+                console.info('[ConfigManager.reload] Reloading configuration');
+            }
+            this.loadEnv(); // Reload environment variables
+            this.config = JSON.parse(JSON.stringify(exports.config)); // Reset to defaults
+            this.loadConfigFromFile(); // Load from file and apply environment overrides
+            this.validateConfig(); // validateConfig itself uses get() which has logger checks
+            if (this.logger) {
+                this.logger.info('Configuration reloaded successfully');
+            }
+            else {
+                console.info('[ConfigManager.reload] Configuration reloaded successfully');
+            }
             return true;
         }
         catch (error) {
-            this.logger.error('Failed to reload configuration', { error: error instanceof Error ? error : String(error) });
+            if (this.logger) {
+                this.logger.error('Failed to reload configuration', { error: error instanceof Error ? error : String(error) });
+            }
+            else {
+                console.error('[ConfigManager.reload] Failed to reload configuration', { error: error instanceof Error ? error : String(error) });
+            }
+            // In case of reload failure, we should probably mark the config as uninitialized
+            // or revert to a last known good state if possible, though that's more complex.
+            // For now, just log and return false. The existing (potentially stale) config remains.
             return false;
         }
     }
@@ -518,23 +737,43 @@ class ConfigManager {
             // 确保目录存在
             const dir = path.dirname(configPath);
             if (!fs.existsSync(dir)) {
-                this.logger.debug(`Creating directory: ${dir}`);
+                if (this.logger) {
+                    this.logger.debug(`Creating directory: ${dir}`);
+                }
+                else {
+                    console.debug(`[ConfigManager.saveConfig] Creating directory: ${dir}`);
+                }
                 fs.mkdirSync(dir, { recursive: true });
             }
             // 创建备份（如果需要）
             if (options.backup && fs.existsSync(configPath)) {
                 const backupPath = `${configPath}.backup.${Date.now()}`;
                 fs.copyFileSync(configPath, backupPath);
-                this.logger.info(`Created configuration backup at ${backupPath}`);
+                if (this.logger) {
+                    this.logger.info(`Created configuration backup at ${backupPath}`);
+                }
+                else {
+                    console.info(`[ConfigManager.saveConfig] Created configuration backup at ${backupPath}`);
+                }
             }
             // 写入配置文件
             const indent = options.pretty ? 2 : 0;
             fs.writeFileSync(configPath, JSON.stringify(this.config, null, indent), 'utf8');
-            this.logger.info(`Configuration saved to ${configPath}`);
+            if (this.logger) {
+                this.logger.info(`Configuration saved to ${configPath}`);
+            }
+            else {
+                console.info(`[ConfigManager.saveConfig] Configuration saved to ${configPath}`);
+            }
             return true;
         }
         catch (error) {
-            this.logger.error(`Failed to save configuration to ${configPath}`, { error: error instanceof Error ? error : String(error) });
+            if (this.logger) {
+                this.logger.error(`Failed to save configuration to ${configPath}`, { error: error instanceof Error ? error : String(error) });
+            }
+            else {
+                console.error(`[ConfigManager.saveConfig] Failed to save configuration to ${configPath}`, { error: error instanceof Error ? error : String(error) });
+            }
             return false;
         }
     }
@@ -542,7 +781,7 @@ class ConfigManager {
      * 获取特定服务的配置
      * 用于获取特定服务（如Neo4j、Redis等）的完整配置
      * @param service 服务名称
-     * @returns 服务配置
+     * @returns 服务配置，如果未找到则为 undefined
      */
     getServiceConfig(service) {
         this.ensureInitialized();
@@ -557,15 +796,16 @@ class ConfigManager {
             's3': 'storage.s3',
         };
         const configPath = servicePathMap[service] || service;
-        return this.get(configPath, {});
+        // Pass undefined as default to allow get() to return undefined if not found
+        return this.get(configPath, undefined);
     }
 }
 exports.ConfigManager = ConfigManager;
 // 导出配置管理器实例
-exports.config = ConfigManager.getInstance();
+// export const config = ConfigManager.getInstance(); // Commented out to prevent auto-initialization
 // 导出便捷访问方法
-exports.getConfig = exports.config.getConfig.bind(exports.config);
-exports.getServiceConfig = exports.config.getServiceConfig.bind(exports.config);
+// export const getConfig = config.getConfig.bind(config); // Commented out as it depends on 'config'
+// export const getServiceConfig = config.getServiceConfig.bind(config); // Commented out as it depends on 'config'
 /**
  * 获取Neo4j知识图谱服务配置
  * 用于知识图谱服务初始化
@@ -573,7 +813,8 @@ exports.getServiceConfig = exports.config.getServiceConfig.bind(exports.config);
  * @returns Neo4j配置对象
  */
 function getNeo4jConfig(validate = true) {
-    const neo4jConfig = exports.config.getServiceConfig('neo4j');
+    const configManager = ConfigManager.getInstance();
+    const neo4jConfig = configManager.getServiceConfig('neo4j');
     if (!neo4jConfig) {
         throw new Error('Neo4j configuration is missing');
     }

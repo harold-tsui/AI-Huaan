@@ -1,0 +1,336 @@
+name: BASB CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+jobs:
+  # 代码质量检查
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run code style check
+        run: npm run format:check
+
+  # 单元测试
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Upload test coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-test-coverage
+          path: coverage/
+
+  # 集成测试
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    services:
+      mongodb:
+        image: mongo:6
+        ports:
+          - 27017:27017
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          MONGODB_URI: mongodb://localhost:27017/basb-test
+          REDIS_URI: redis://localhost:6379/0
+
+      - name: Upload test coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-coverage
+          path: coverage/
+
+  # 构建 Docker 镜像
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        service: [api, knowledge-graph, document-processing, search, ai-service, frontend]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}/basb-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./docker/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 部署到 Staging 环境
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name basb-cluster --region ${{ secrets.AWS_REGION }}
+
+      - name: Update image tags
+        run: |
+          cd kubernetes/overlays/staging
+          kustomize edit set image ghcr.io/basb-system/basb-api-service:staging=ghcr.io/${{ github.repository }}/basb-api:sha-$(echo ${{ github.sha }} | cut -c1-7)
+          kustomize edit set image ghcr.io/basb-system/basb-knowledge-graph:staging=ghcr.io/${{ github.repository }}/basb-knowledge-graph:sha-$(echo ${{ github.sha }} | cut -c1-7)
+          kustomize edit set image ghcr.io/basb-system/basb-document-processing:staging=ghcr.io/${{ github.repository }}/basb-document-processing:sha-$(echo ${{ github.sha }} | cut -c1-7)
+          kustomize edit set image ghcr.io/basb-system/basb-search:staging=ghcr.io/${{ github.repository }}/basb-search:sha-$(echo ${{ github.sha }} | cut -c1-7)
+          kustomize edit set image ghcr.io/basb-system/basb-ai-service:staging=ghcr.io/${{ github.repository }}/basb-ai-service:sha-$(echo ${{ github.sha }} | cut -c1-7)
+          kustomize edit set image ghcr.io/basb-system/basb-frontend:staging=ghcr.io/${{ github.repository }}/basb-frontend:sha-$(echo ${{ github.sha }} | cut -c1-7)
+
+      - name: Deploy to Staging
+        run: |
+          kubectl apply -k kubernetes/overlays/staging
+          kubectl rollout status deployment/basb-api-service-staging -n basb-staging --timeout=300s
+          kubectl rollout status deployment/basb-knowledge-graph-staging -n basb-staging --timeout=300s
+          kubectl rollout status deployment/basb-document-processing-staging -n basb-staging --timeout=300s
+          kubectl rollout status deployment/basb-search-staging -n basb-staging --timeout=300s
+          kubectl rollout status deployment/basb-ai-service-staging -n basb-staging --timeout=300s
+          kubectl rollout status deployment/basb-frontend-staging -n basb-staging --timeout=300s
+
+      - name: Run Smoke Tests
+        run: |
+          # 等待服务完全启动
+          sleep 30
+          # 运行简单的健康检查
+          curl -f https://staging.basb-system.com/api/health || exit 1
+
+      - name: Notify Slack on Success
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: deployments
+          SLACK_COLOR: good
+          SLACK_TITLE: Staging Deployment Successful
+          SLACK_MESSAGE: 'BASB System has been successfully deployed to Staging environment :rocket:'
+
+  # 部署到 Production 环境
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name basb-cluster --region ${{ secrets.AWS_REGION }}
+
+      - name: Update image tags
+        run: |
+          cd kubernetes/overlays/production
+          kustomize edit set image ghcr.io/basb-system/basb-api-service:production=ghcr.io/${{ github.repository }}/basb-api:sha-$(echo ${{ github.sha }} | cut -c1-7)
+          kustomize edit set image ghcr.io/basb-system/basb-knowledge-graph:production=ghcr.io/${{ github.repository }}/basb-knowledge-graph:sha-$(echo ${{ github.sha }} | cut -c1-7)
+          kustomize edit set image ghcr.io/basb-system/basb-document-processing:production=ghcr.io/${{ github.repository }}/basb-document-processing:sha-$(echo ${{ github.sha }} | cut -c1-7)
+          kustomize edit set image ghcr.io/basb-system/basb-search:production=ghcr.io/${{ github.repository }}/basb-search:sha-$(echo ${{ github.sha }} | cut -c1-7)
+          kustomize edit set image ghcr.io/basb-system/basb-ai-service:production=ghcr.io/${{ github.repository }}/basb-ai-service:sha-$(echo ${{ github.sha }} | cut -c1-7)
+          kustomize edit set image ghcr.io/basb-system/basb-frontend:production=ghcr.io/${{ github.repository }}/basb-frontend:sha-$(echo ${{ github.sha }} | cut -c1-7)
+
+      - name: Deploy to Production
+        run: |
+          # 使用蓝绿部署策略
+          # 1. 创建新版本的部署
+          kubectl apply -k kubernetes/overlays/production
+          
+          # 2. 等待新版本的部署就绪
+          kubectl rollout status deployment/basb-api-service -n basb-production --timeout=300s
+          kubectl rollout status deployment/basb-knowledge-graph -n basb-production --timeout=300s
+          kubectl rollout status deployment/basb-document-processing -n basb-production --timeout=300s
+          kubectl rollout status deployment/basb-search -n basb-production --timeout=300s
+          kubectl rollout status deployment/basb-ai-service -n basb-production --timeout=300s
+          kubectl rollout status deployment/basb-frontend -n basb-production --timeout=300s
+
+      - name: Run Smoke Tests
+        run: |
+          # 等待服务完全启动
+          sleep 30
+          # 运行简单的健康检查
+          curl -f https://basb-system.com/api/health || exit 1
+
+      - name: Notify Slack on Success
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: deployments
+          SLACK_COLOR: good
+          SLACK_TITLE: Production Deployment Successful
+          SLACK_MESSAGE: 'BASB System has been successfully deployed to Production environment :rocket:'
+
+  # 安全扫描
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ghcr.io/${{ github.repository }}/basb-api:sha-$(echo ${{ github.sha }} | cut -c1-7)'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run OWASP ZAP scan
+        uses: zaproxy/action-baseline@v0.7.0
+        with:
+          target: 'https://basb-system.com'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+
+  # 性能测试
+  performance-test:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup k6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run k6 performance tests
+        run: k6 run ./performance-tests/load-test.js
+
+      - name: Upload performance test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-test-results
+          path: performance-test-results/

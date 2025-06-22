@@ -6,11 +6,12 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.globalFileProcessor = exports.FileProcessor = void 0;
-const logger_1 = require("../../../utils/logger");
+const types_1 = require("../types");
+const types_2 = require("../../ai-services/types");
 const ai_services_1 = require("../../ai-services");
-const types_1 = require("../../ai-services/types");
+const logger_1 = require("../../../utils/logger");
+// import { extractText } from './extract-text'; // Module not found, temporarily commented out
 const text_processor_1 = require("./text-processor");
-const types_2 = require("../types");
 /**
  * 文件处理器实现
  */
@@ -117,7 +118,7 @@ class FileProcessor {
         // 创建一个临时的文本捕获项
         const textItem = {
             ...item,
-            sourceType: types_2.CaptureSourceType.TEXT,
+            sourceType: types_1.CaptureSourceType.TEXT,
             content: {
                 ...item.content,
                 text: fileContent,
@@ -126,14 +127,9 @@ class FileProcessor {
         // 使用文本处理器处理
         const textProcessingResult = await text_processor_1.globalTextProcessor.processCaptureItem(textItem);
         // 合并处理结果
-        result.summary = textProcessingResult.summary;
-        result.keyInsights = textProcessingResult.keyInsights;
-        result.entities = textProcessingResult.entities;
-        result.sentiment = textProcessingResult.sentiment;
-        result.topics = textProcessingResult.topics;
-        result.readingTime = textProcessingResult.readingTime;
-        result.complexity = textProcessingResult.complexity;
-        result.suggestedTags = textProcessingResult.suggestedTags;
+        Object.assign(result, textProcessingResult);
+        // Ensure success is not overwritten if textProcessingResult.success is false but we had initial success
+        result.success = result.success && textProcessingResult.success;
         // 根据文件类型添加特定的处理
         if (mimeType === 'text/markdown') {
             // 提取Markdown文件的结构
@@ -169,7 +165,7 @@ class FileProcessor {
             // 使用文本处理器处理提取的文本
             const textItem = {
                 ...item,
-                sourceType: types_2.CaptureSourceType.TEXT,
+                sourceType: types_1.CaptureSourceType.TEXT,
                 content: {
                     ...item.content,
                     text: item.content.text,
@@ -178,14 +174,8 @@ class FileProcessor {
             // 使用文本处理器处理
             const textProcessingResult = await text_processor_1.globalTextProcessor.processCaptureItem(textItem);
             // 合并处理结果
-            result.summary = textProcessingResult.summary;
-            result.keyInsights = textProcessingResult.keyInsights;
-            result.entities = textProcessingResult.entities;
-            result.sentiment = textProcessingResult.sentiment;
-            result.topics = textProcessingResult.topics;
-            result.readingTime = textProcessingResult.readingTime;
-            result.complexity = textProcessingResult.complexity;
-            result.suggestedTags = textProcessingResult.suggestedTags;
+            Object.assign(result, textProcessingResult);
+            result.success = result.success && textProcessingResult.success;
         }
         else {
             // 如果没有提取的文本，则添加一个提示信息
@@ -210,7 +200,7 @@ class FileProcessor {
             // 使用文本处理器处理提取的文本
             const textItem = {
                 ...item,
-                sourceType: types_2.CaptureSourceType.TEXT,
+                sourceType: types_1.CaptureSourceType.TEXT,
                 content: {
                     ...item.content,
                     text: item.content.text,
@@ -219,11 +209,8 @@ class FileProcessor {
             // 使用文本处理器处理
             const textProcessingResult = await text_processor_1.globalTextProcessor.processCaptureItem(textItem);
             // 合并处理结果
-            result.summary = textProcessingResult.summary;
-            result.keyInsights = textProcessingResult.keyInsights;
-            result.entities = textProcessingResult.entities;
-            result.topics = textProcessingResult.topics;
-            result.suggestedTags = textProcessingResult.suggestedTags;
+            Object.assign(result, textProcessingResult);
+            result.success = result.success && textProcessingResult.success;
         }
         else {
             // 如果没有提取的文本，则添加一个提示信息
@@ -270,8 +257,8 @@ class FileProcessor {
         try {
             // 使用AI服务分析Markdown结构
             const result = await ai_services_1.globalAIRoutingService.chat([
-                { role: types_1.MessageRole.SYSTEM, content: { type: types_1.ContentType.TEXT, text: '你是一个专业的Markdown分析助手，擅长分析Markdown文档的结构和内容组织。请分析提供的Markdown文本，识别标题层次结构、列表、代码块、引用等元素。以JSON格式返回分析结果。' } },
-                { role: types_1.MessageRole.USER, content: { type: types_1.ContentType.TEXT, text: `请分析以下Markdown文本的结构：\n\n${markdown.length > 8000 ? markdown.substring(0, 8000) + '...' : markdown}` } },
+                { role: types_2.MessageRole.SYSTEM, content: { type: types_2.ContentType.TEXT, text: '你是一个专业的Markdown分析助手，擅长分析Markdown文档的结构和内容组织。请分析提供的Markdown文本，识别标题层次结构、列表、代码块、引用等元素。以JSON格式返回分析结果。' } },
+                { role: types_2.MessageRole.USER, content: { type: types_2.ContentType.TEXT, text: `请分析以下Markdown文本的结构：\n\n${markdown.length > 8000 ? markdown.substring(0, 8000) + '...' : markdown}` } },
             ], { temperature: 0.2 });
             // 尝试解析JSON响应
             try {
@@ -356,8 +343,8 @@ class FileProcessor {
             // 注意：这里假设AI服务支持通过URL分析图片
             // 在实际实现中，需要使用支持图片分析的AI服务
             const result = await ai_services_1.globalAIRoutingService.chat([
-                { role: types_1.MessageRole.SYSTEM, content: { type: types_1.ContentType.TEXT, text: '你是一个专业的图片分析助手，擅长描述图片内容。请根据提供的图片URL，生成一个简短但全面的描述。' } },
-                { role: types_1.MessageRole.USER, content: { type: types_1.ContentType.TEXT, text: `请分析并描述这张图片：${imageUrl}` } },
+                { role: types_2.MessageRole.SYSTEM, content: { type: types_2.ContentType.TEXT, text: '你是一个专业的图片分析助手，擅长描述图片内容。请根据提供的图片URL，生成一个简短但全面的描述。' } },
+                { role: types_2.MessageRole.USER, content: { type: types_2.ContentType.TEXT, text: `请分析并描述这张图片：${imageUrl}` } },
             ], { temperature: 0.5 });
             const messageContent = result.message.content;
             const contentText = Array.isArray(messageContent)
@@ -481,7 +468,7 @@ class FileProcessor {
      * 获取支持的源类型
      */
     getSupportedSourceTypes() {
-        return [types_2.CaptureSourceType.FILE];
+        return [types_1.CaptureSourceType.FILE];
     }
     /**
      * 获取处理器名称

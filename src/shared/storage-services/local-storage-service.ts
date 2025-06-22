@@ -10,20 +10,10 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import * as mime from 'mime-types';
 import { BaseStorageService } from './base-storage-service';
-import {
-  CopyOptions,
-  DirectoryMetadata,
-  DownloadOptions,
-  FileMetadata,
-  ListOptions,
-  ListResult,
-  MoveOptions,
-  SignedUrlOptions,
-  StorageItem,
-  StorageItemType,
-  StorageProviderType,
-  UploadOptions,
-} from './types';
+import { IStorageService, DocumentStorageResult, KnowledgeItemUpdate, KGUpdateResult, KGQueryResult, VersionHistory } from './storage.interface';
+import { KnowledgeItem } from '../types/knowledge-item';
+import { ServiceConfig } from '../mcp-core/types';
+import { StorageProviderType, FileMetadata, DirectoryMetadata } from './types';
 
 /**
  * 本地存储服务配置
@@ -41,935 +31,370 @@ export interface LocalStorageConfig {
  */
 export class LocalStorageService extends BaseStorageService {
   protected config: LocalStorageConfig;
-  private initialized: boolean = false;
-  
-  /**
-   * 构造函数
-   * @param config 配置
-   */
+
   constructor(config: LocalStorageConfig) {
-    super('local-storage', '1.0.0', StorageProviderType.LOCAL, '');
+    const serviceConfig: ServiceConfig = {
+      logLevel: 'info'
+    };
+    super('LocalStorageService', '1.0.0', StorageProviderType.LOCAL, config.rootDir, serviceConfig);
+    this.config = config;
   }
-  
-  /**
-   * 初始化提供者
-   */
-  protected async initializeProvider(): Promise<boolean> {
+
+  // KG methods are not implemented for local storage, they would typically
+  // interface with a graph database like Neo4j.
+  updateKnowledgeGraph(entities: any[], relationships: any[]): Promise<KGUpdateResult> {
+    this.logger.warn('updateKnowledgeGraph is not implemented for LocalStorageService');
+    return Promise.resolve({ success: false, errors: ['Not Implemented'] });
+  }
+
+  async queryKnowledgeGraph(query: string, params?: any): Promise<KGQueryResult> {
+    this.logger.warn('queryKnowledgeGraph is not implemented for LocalStorageService');
+    return Promise.resolve({});
+  }
+
+  async trackVersion(documentId: string, changes: any, userId: string, summary?: string): Promise<VersionHistory> {
+    this.logger.warn('trackVersion is not implemented for LocalStorageService');
+    // In a real implementation, you would store version information.
+    return Promise.reject(new Error('Not Implemented'));
+  }
+
+  async getVersionHistory(documentId: string): Promise<VersionHistory[]> {
+    this.logger.warn('getVersionHistory is not implemented for LocalStorageService');
+    return Promise.resolve([]);
+  }
+
+  async storeItem(item: KnowledgeItem): Promise<DocumentStorageResult> {
+    const filePath = this.getPhysicalPath(`${item.id}.json`);
     try {
-      // 确保根目录存在
-      await this.ensureDirectoryExists(this.config.rootDir);
-      
-      // 确保临时目录存在
-      if (this.config.tempDir) {
-        await this.ensureDirectoryExists(this.config.tempDir);
-      }
-      
-      this.initialized = true;
-      return true;
-    } catch (error) {
-      this.logger.error('Failed to initialize local storage provider', { error: error instanceof Error ? error.message : String(error) });
-      return false;
+      await this.ensureDirectoryExists(path.dirname(filePath));
+      await fs.writeFile(filePath, JSON.stringify(item, null, 2));
+      return { status: 'success', storagePath: filePath };
+    } catch (error: any) {
+      return { status: 'error', error: error.message };
     }
   }
-  
-  /**
-   * 关闭提供者
-   */
-  protected async shutdownProvider(): Promise<boolean> {
-    // 本地存储不需要特殊关闭操作
-    this.initialized = false;
-    return true;
+
+  async storeDocument(item: KnowledgeItem): Promise<DocumentStorageResult> {
+    return this.storeItem(item);
   }
-  
-  /**
-   * 上传文件
-   * @param localFilePath 本地文件路径
-   * @param remotePath 远程路径
-   * @param options 上传选项
-   */
-  async uploadFile(localFilePath: string, remotePath: string, options?: UploadOptions): Promise<FileMetadata> {
-    this.ensureInitialized();
-    this.logger.info(`Uploading file from ${localFilePath} to ${remotePath}`);
-    
+
+  async getDocument(id: string): Promise<KnowledgeItem | null> {
+    return this.getItem(id);
+  }
+
+  async updateDocument(id: string, updates: Partial<KnowledgeItemUpdate>): Promise<DocumentStorageResult> {
+    const updatedItem = await this.updateItem(id, updates);
+    if (updatedItem) {
+      return { status: 'success', storagePath: this.getPhysicalPath(`${id}.json`) };
+    }
+    return { status: 'error', error: 'Failed to update document' };
+  }
+
+  async deleteDocument(id: string): Promise<DocumentStorageResult> {
+    const success = await this.deleteItem(id);
+    if (success) {
+      return { status: 'success', storagePath: this.getPhysicalPath(`${id}.json`) };
+    }
+    return { status: 'error', error: 'Failed to delete document' };
+  }
+
+  // Helper method to get physical path
+  private getPhysicalPath(relativePath: string): string {
+    return path.join(this.config.rootDir, relativePath);
+  }
+
+  // Helper method to ensure directory exists
+  private async ensureDirectoryExists(dirPath: string): Promise<void> {
     try {
-      // 检查源文件是否存在
-      await fs.access(localFilePath, fsSync.constants.R_OK);
-      
-      // 获取目标路径
-      const targetPath = this.getPhysicalPath(remotePath);
-      
-      // 检查目标文件是否存在
-      const targetExists = await this.fileExists(remotePath);
-      if (targetExists && options?.overwrite !== true) {
-        throw new Error(`File already exists at ${remotePath} and overwrite is not enabled`);
-      }
-      
-      // 确保目标目录存在
-      await this.ensureDirectoryExists(path.dirname(targetPath));
-      
-      // 复制文件
-      await fs.copyFile(localFilePath, targetPath);
-      
-      // 获取文件信息
-      const stats = await fs.stat(targetPath);
-      const mimeType = options?.contentType || mime.lookup(targetPath) || 'application/octet-stream';
-      
-      // 创建元数据
-      const metadata: FileMetadata = {
-        name: path.basename(remotePath),
-        path: remotePath,
-        size: stats.size,
-        mimeType,
-        createdAt: stats.birthtime.toISOString(),
-        updatedAt: stats.mtime.toISOString(),
-        isPublic: options?.isPublic || false,
-        ...options?.metadata,
-      };
-      
-      // 如果配置了基础URL且文件是公开的，添加URL
-      if (this.config.baseUrl && options?.isPublic) {
-        metadata.url = this.buildPublicUrl(remotePath);
-      }
-      
-      return metadata;
-    } catch (error) {
-      this.logger.error(`Error uploading file to ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : String(error)}`);
+      await fs.access(dirPath);
+    } catch {
+      await fs.mkdir(dirPath, { recursive: true });
     }
   }
-  
-  /**
-   * 上传数据
-   * @param data 数据（Buffer或字符串）
-   * @param remotePath 远程路径
-   * @param options 上传选项
-   */
-  async uploadData(data: Buffer | string, remotePath: string, options?: UploadOptions): Promise<FileMetadata> {
-    this.ensureInitialized();
-    this.logger.info(`Uploading data to ${remotePath}`);
-    
+
+  // Required methods from IStorageService interface
+  async getItem(id: string): Promise<KnowledgeItem | null> {
+    const filePath = this.getPhysicalPath(`${id}.json`);
     try {
-      // 获取目标路径
-      const targetPath = this.getPhysicalPath(remotePath);
-      
-      // 检查目标文件是否存在
-      const targetExists = await this.fileExists(remotePath);
-      if (targetExists && options?.overwrite !== true) {
-        throw new Error(`File already exists at ${remotePath} and overwrite is not enabled`);
-      }
-      
-      // 确保目标目录存在
-      await this.ensureDirectoryExists(path.dirname(targetPath));
-      
-      // 将数据写入文件
-      const buffer = typeof data === 'string' ? Buffer.from(data) : data;
-      await fs.writeFile(targetPath, buffer);
-      
-      // 获取文件信息
-      const stats = await fs.stat(targetPath);
-      const mimeType = options?.contentType || mime.lookup(targetPath) || 'application/octet-stream';
-      
-      // 创建元数据
-      const metadata: FileMetadata = {
-        name: path.basename(remotePath),
-        path: remotePath,
-        size: stats.size,
-        mimeType,
-        createdAt: stats.birthtime.toISOString(),
-        updatedAt: stats.mtime.toISOString(),
-        isPublic: options?.isPublic || false,
-        ...options?.metadata,
-      };
-      
-      // 如果配置了基础URL且文件是公开的，添加URL
-      if (this.config.baseUrl && options?.isPublic) {
-        metadata.url = this.buildPublicUrl(remotePath);
-      }
-      
-      return metadata;
+      const content = await fs.readFile(filePath, 'utf-8');
+      return JSON.parse(content) as KnowledgeItem;
     } catch (error) {
-      this.logger.error(`Error uploading data to ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to upload data: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 下载文件
-   * @param remotePath 远程路径
-   * @param localFilePath 本地文件路径
-   * @param options 下载选项
-   */
-  async downloadFile(remotePath: string, localFilePath: string, options?: DownloadOptions): Promise<FileMetadata> {
-    this.ensureInitialized();
-    this.logger.info(`Downloading file from ${remotePath} to ${localFilePath}`);
-    
-    try {
-      // 获取源文件路径
-      const sourcePath = this.getPhysicalPath(remotePath);
-      
-      // 检查源文件是否存在
-      if (!await this.fileExists(remotePath)) {
-        throw new Error(`File does not exist at ${remotePath}`);
-      }
-      
-      // 获取文件元数据
-      const metadata = await this.getFileMetadata(remotePath);
-      
-      // 如果指定了条件下载
-      if (options?.ifModifiedSince) {
-        const modifiedSince = options.ifModifiedSince.getTime();
-        const lastModified = new Date(metadata.updatedAt).getTime();
-        
-        if (lastModified <= modifiedSince) {
-          // 文件未修改，返回元数据但不复制文件
-          return metadata;
-        }
-      }
-      
-      // 确保目标目录存在
-      await this.ensureDirectoryExists(path.dirname(localFilePath));
-      
-      // 如果指定了字节范围
-      if (options?.range) {
-        // 创建读取流和写入流
-        const readStream = fsSync.createReadStream(sourcePath, {
-          start: options.range.start,
-          end: options.range.end,
-        });
-        
-        const writeStream = fsSync.createWriteStream(localFilePath);
-        
-        // 使用管道复制数据
-        await new Promise<void>((resolve, reject) => {
-          readStream.pipe(writeStream)
-            .on('finish', resolve)
-            .on('error', reject);
-        });
-      } else {
-        // 复制整个文件
-        await fs.copyFile(sourcePath, localFilePath);
-      }
-      
-      return metadata;
-    } catch (error) {
-      this.logger.error(`Error downloading file from ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to download file: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 下载数据
-   * @param remotePath 远程路径
-   * @param options 下载选项
-   */
-  async downloadData(remotePath: string, options?: DownloadOptions): Promise<{ data: Buffer; metadata: FileMetadata }> {
-    this.ensureInitialized();
-    this.logger.info(`Downloading data from ${remotePath}`);
-    
-    try {
-      // 获取源文件路径
-      const sourcePath = this.getPhysicalPath(remotePath);
-      
-      // 检查源文件是否存在
-      if (!await this.fileExists(remotePath)) {
-        throw new Error(`File does not exist at ${remotePath}`);
-      }
-      
-      // 获取文件元数据
-      const metadata = await this.getFileMetadata(remotePath);
-      
-      // 如果指定了条件下载
-      if (options?.ifModifiedSince) {
-        const modifiedSince = options.ifModifiedSince.getTime();
-        const lastModified = new Date(metadata.updatedAt).getTime();
-        
-        if (lastModified <= modifiedSince) {
-          // 文件未修改，返回空数据和元数据
-          return { data: Buffer.alloc(0), metadata };
-        }
-      }
-      
-      // 如果指定了字节范围
-      if (options?.range) {
-        // 读取部分文件内容
-        const fileHandle = await fs.open(sourcePath, 'r');
-        try {
-          const start = options.range.start;
-          const end = options.range.end !== undefined ? options.range.end : metadata.size - 1;
-          const length = end - start + 1;
-          
-          const buffer = Buffer.alloc(length);
-          const { bytesRead } = await fileHandle.read(buffer, 0, length, start);
-          
-          return { data: buffer.slice(0, bytesRead), metadata };
-        } finally {
-          await fileHandle.close();
-        }
-      } else {
-        // 读取整个文件内容
-        const data = await fs.readFile(sourcePath);
-        return { data, metadata };
-      }
-    } catch (error) {
-      this.logger.error(`Error downloading data from ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to download data: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 获取文件元数据
-   * @param remotePath 远程路径
-   */
-  async getFileMetadata(remotePath: string): Promise<FileMetadata> {
-    this.ensureInitialized();
-    this.logger.info(`Getting file metadata for ${remotePath}`);
-    
-    try {
-      // 获取物理路径
-      const physicalPath = this.getPhysicalPath(remotePath);
-      
-      // 检查文件是否存在
-      await fs.access(physicalPath, fsSync.constants.F_OK);
-      
-      // 获取文件状态
-      const stats = await fs.stat(physicalPath);
-      
-      // 检查是否为文件
-      if (!stats.isFile()) {
-        throw new Error(`Path ${remotePath} is not a file`);
-      }
-      
-      // 创建元数据
-      const metadata: FileMetadata = {
-        name: path.basename(remotePath),
-        path: remotePath,
-        size: stats.size,
-        mimeType: mime.lookup(physicalPath) || 'application/octet-stream',
-        createdAt: stats.birthtime.toISOString(),
-        updatedAt: stats.mtime.toISOString(),
-        isPublic: false, // 默认为非公开
-      };
-      
-      // 如果配置了基础URL，检查文件是否公开
-      if (this.config.baseUrl) {
-        // 实际实现中，应从某处获取文件的公开状态
-        // 这里简单地假设所有文件都是非公开的
-      }
-      
-      return metadata;
-    } catch (error) {
-      this.logger.error(`Error getting file metadata for ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to get file metadata: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 获取目录元数据
-   * @param remotePath 远程路径
-   */
-  async getDirectoryMetadata(remotePath: string): Promise<DirectoryMetadata> {
-    this.ensureInitialized();
-    this.logger.info(`Getting directory metadata for ${remotePath}`);
-    
-    try {
-      // 获取物理路径
-      const physicalPath = this.getPhysicalPath(remotePath);
-      
-      // 检查目录是否存在
-      await fs.access(physicalPath, fsSync.constants.F_OK);
-      
-      // 获取目录状态
-      const stats = await fs.stat(physicalPath);
-      
-      // 检查是否为目录
-      if (!stats.isDirectory()) {
-        throw new Error(`Path ${remotePath} is not a directory`);
-      }
-      
-      // 创建元数据
-      const metadata: DirectoryMetadata = {
-        name: path.basename(remotePath) || '/', // 根目录的basename是空字符串
-        path: remotePath,
-        createdAt: stats.birthtime.toISOString(),
-        updatedAt: stats.mtime.toISOString(),
-        isPublic: false, // 默认为非公开
-      };
-      
-      return metadata;
-    } catch (error) {
-      this.logger.error(`Error getting directory metadata for ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to get directory metadata: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 检查文件是否存在
-   * @param remotePath 远程路径
-   */
-  async fileExists(remotePath: string): Promise<boolean> {
-    this.ensureInitialized();
-    
-    try {
-      // 获取物理路径
-      const physicalPath = this.getPhysicalPath(remotePath);
-      
-      // 检查路径是否存在
-      await fs.access(physicalPath, fsSync.constants.F_OK);
-      
-      // 检查是否为文件
-      const stats = await fs.stat(physicalPath);
-      return stats.isFile();
-    } catch (error) {
-      return false;
-    }
-  }
-  
-  /**
-   * 检查目录是否存在
-   * @param remotePath 远程路径
-   */
-  async directoryExists(remotePath: string): Promise<boolean> {
-    this.ensureInitialized();
-    
-    try {
-      // 获取物理路径
-      const physicalPath = this.getPhysicalPath(remotePath);
-      
-      // 检查路径是否存在
-      await fs.access(physicalPath, fsSync.constants.F_OK);
-      
-      // 检查是否为目录
-      const stats = await fs.stat(physicalPath);
-      return stats.isDirectory();
-    } catch (error) {
-      return false;
-    }
-  }
-  
-  /**
-   * 列出目录内容
-   * @param remotePath 远程路径
-   * @param options 列表选项
-   */
-  async listDirectory(remotePath: string, options?: ListOptions): Promise<ListResult> {
-    this.ensureInitialized();
-    this.logger.info(`Listing directory ${remotePath}`);
-    
-    try {
-      // 获取物理路径
-      const physicalPath = this.getPhysicalPath(remotePath);
-      
-      // 检查目录是否存在
-      if (!await this.directoryExists(remotePath)) {
-        throw new Error(`Directory does not exist at ${remotePath}`);
-      }
-      
-      // 读取目录内容
-      const entries = await fs.readdir(physicalPath, { withFileTypes: true });
-      
-      // 过滤和处理结果
-      const items: StorageItem[] = [];
-      const prefixes: string[] = [];
-      
-      // 应用前缀过滤
-      const prefix = options?.prefix || '';
-      const delimiter = options?.delimiter || '/';
-      
-      for (const entry of entries) {
-        const entryName = entry.name;
-        
-        // 跳过以点开头的隐藏文件和目录
-        if (entryName.startsWith('.')) {
-          continue;
-        }
-        
-        // 应用前缀过滤
-        if (prefix && !entryName.startsWith(prefix)) {
-          continue;
-        }
-        
-        const entryPath = path.join(remotePath, entryName).replace(/\\/g, '/');
-        
-        if (entry.isDirectory()) {
-          // 处理目录
-          if (options?.recursive) {
-            // 递归列出子目录
-            const subResult = await this.listDirectory(entryPath, options);
-            items.push(...subResult.items);
-            prefixes.push(...(subResult.prefixes || []));
-          } else if (delimiter) {
-            // 使用分隔符模式，将目录添加到前缀列表
-            prefixes.push(`${entryPath}${delimiter}`);
-          } else {
-            // 将目录添加到项目列表
-            const dirMetadata = await this.getDirectoryMetadata(entryPath);
-            items.push({
-              type: StorageItemType.DIRECTORY,
-              metadata: dirMetadata,
-            });
-          }
-        } else if (entry.isFile()) {
-          // 处理文件
-          const fileMetadata = await this.getFileMetadata(entryPath);
-          items.push({
-            type: StorageItemType.FILE,
-            metadata: fileMetadata,
-          });
-        }
-      }
-      
-      // 应用最大结果数限制
-      const maxResults = options?.maxResults || Number.MAX_SAFE_INTEGER;
-      const limitedItems = items.slice(0, maxResults);
-      
-      return {
-        items: limitedItems,
-        prefixes: prefixes.length > 0 ? prefixes : undefined,
-      };
-    } catch (error) {
-      this.logger.error(`Error listing directory ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to list directory: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 创建目录
-   * @param remotePath 远程路径
-   * @param options 选项
-   */
-  async createDirectory(remotePath: string, options?: { isPublic?: boolean }): Promise<DirectoryMetadata> {
-    this.ensureInitialized();
-    this.logger.info(`Creating directory ${remotePath}`);
-    
-    try {
-      // 获取物理路径
-      const physicalPath = this.getPhysicalPath(remotePath);
-      
-      // 创建目录
-      await this.ensureDirectoryExists(physicalPath);
-      
-      // 获取目录元数据
-      const stats = await fs.stat(physicalPath);
-      
-      // 创建元数据
-      const metadata: DirectoryMetadata = {
-        name: path.basename(remotePath) || '/', // 根目录的basename是空字符串
-        path: remotePath,
-        createdAt: stats.birthtime.toISOString(),
-        updatedAt: stats.mtime.toISOString(),
-        isPublic: options?.isPublic || false,
-      };
-      
-      return metadata;
-    } catch (error) {
-      this.logger.error(`Error creating directory ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to create directory: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 删除文件
-   * @param remotePath 远程路径
-   */
-  async deleteFile(remotePath: string): Promise<boolean> {
-    this.ensureInitialized();
-    this.logger.info(`Deleting file ${remotePath}`);
-    
-    try {
-      // 获取物理路径
-      const physicalPath = this.getPhysicalPath(remotePath);
-      
-      // 检查文件是否存在
-      if (!await this.fileExists(remotePath)) {
-        // 文件不存在，视为删除成功
-        return true;
-      }
-      
-      // 删除文件
-      await fs.unlink(physicalPath);
-      return true;
-    } catch (error) {
-      this.logger.error(`Error deleting file ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to delete file: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 删除目录
-   * @param remotePath 远程路径
-   * @param recursive 是否递归删除
-   */
-  async deleteDirectory(remotePath: string, recursive: boolean = false): Promise<boolean> {
-    this.ensureInitialized();
-    this.logger.info(`Deleting directory ${remotePath} (recursive: ${recursive})`);
-    
-    try {
-      // 获取物理路径
-      const physicalPath = this.getPhysicalPath(remotePath);
-      
-      // 检查目录是否存在
-      if (!await this.directoryExists(remotePath)) {
-        // 目录不存在，视为删除成功
-        return true;
-      }
-      
-      if (recursive) {
-        // 递归删除目录及其内容
-        await this.recursiveDeleteDirectory(physicalPath);
-      } else {
-        // 检查目录是否为空
-        const entries = await fs.readdir(physicalPath);
-        if (entries.length > 0) {
-          throw new Error(`Directory ${remotePath} is not empty and recursive deletion is not enabled`);
-        }
-        
-        // 删除空目录
-        await fs.rmdir(physicalPath);
-      }
-      
-      return true;
-    } catch (error) {
-      this.logger.error(`Error deleting directory ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to delete directory: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 复制文件
-   * @param sourceRemotePath 源远程路径
-   * @param targetRemotePath 目标远程路径
-   * @param options 复制选项
-   */
-  async copyFile(sourceRemotePath: string, targetRemotePath: string, options?: CopyOptions): Promise<FileMetadata> {
-    this.ensureInitialized();
-    this.logger.info(`Copying file from ${sourceRemotePath} to ${targetRemotePath}`);
-    
-    try {
-      // 获取源文件和目标文件的物理路径
-      const sourcePhysicalPath = this.getPhysicalPath(sourceRemotePath);
-      const targetPhysicalPath = this.getPhysicalPath(targetRemotePath);
-      
-      // 检查源文件是否存在
-      if (!await this.fileExists(sourceRemotePath)) {
-        throw new Error(`Source file does not exist at ${sourceRemotePath}`);
-      }
-      
-      // 检查目标文件是否存在
-      const targetExists = await this.fileExists(targetRemotePath);
-      if (targetExists && options?.overwrite !== true) {
-        throw new Error(`Target file already exists at ${targetRemotePath} and overwrite is not enabled`);
-      }
-      
-      // 确保目标目录存在
-      await this.ensureDirectoryExists(path.dirname(targetPhysicalPath));
-      
-      // 复制文件
-      await fs.copyFile(sourcePhysicalPath, targetPhysicalPath);
-      
-      // 获取文件元数据
-      const metadata = await this.getFileMetadata(targetRemotePath);
-      
-      // 更新元数据
-      if (options?.metadata) {
-        Object.assign(metadata, options.metadata);
-      }
-      
-      // 设置公共访问权限
-      if (options?.isPublic !== undefined) {
-        metadata.isPublic = options.isPublic;
-        
-        if (options.isPublic && this.config.baseUrl) {
-          metadata.url = this.buildPublicUrl(targetRemotePath);
-        } else {
-          delete metadata.url;
-        }
-      }
-      
-      return metadata;
-    } catch (error) {
-      this.logger.error(`Error copying file from ${sourceRemotePath} to ${targetRemotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to copy file: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 移动文件
-   * @param sourceRemotePath 源远程路径
-   * @param targetRemotePath 目标远程路径
-   * @param options 移动选项
-   */
-  async moveFile(sourceRemotePath: string, targetRemotePath: string, options?: MoveOptions): Promise<FileMetadata> {
-    this.ensureInitialized();
-    this.logger.info(`Moving file from ${sourceRemotePath} to ${targetRemotePath}`);
-    
-    try {
-      // 获取源文件和目标文件的物理路径
-      const sourcePhysicalPath = this.getPhysicalPath(sourceRemotePath);
-      const targetPhysicalPath = this.getPhysicalPath(targetRemotePath);
-      
-      // 检查源文件是否存在
-      if (!await this.fileExists(sourceRemotePath)) {
-        throw new Error(`Source file does not exist at ${sourceRemotePath}`);
-      }
-      
-      // 检查目标文件是否存在
-      const targetExists = await this.fileExists(targetRemotePath);
-      if (targetExists && options?.overwrite !== true) {
-        throw new Error(`Target file already exists at ${targetRemotePath} and overwrite is not enabled`);
-      }
-      
-      // 确保目标目录存在
-      await this.ensureDirectoryExists(path.dirname(targetPhysicalPath));
-      
-      // 移动文件
-      await fs.rename(sourcePhysicalPath, targetPhysicalPath);
-      
-      // 获取文件元数据
-      const metadata = await this.getFileMetadata(targetRemotePath);
-      return metadata;
-    } catch (error) {
-      this.logger.error(`Error moving file from ${sourceRemotePath} to ${targetRemotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to move file: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 生成签名URL
-   * @param remotePath 远程路径
-   * @param options 签名URL选项
-   */
-  async generateSignedUrl(remotePath: string, options: SignedUrlOptions): Promise<string> {
-    this.ensureInitialized();
-    this.logger.info(`Generating signed URL for ${remotePath}`);
-    
-    try {
-      // 检查文件是否存在
-      if (!await this.fileExists(remotePath)) {
-        throw new Error(`File does not exist at ${remotePath}`);
-      }
-      
-      // 如果没有配置基础URL，无法生成签名URL
-      if (!this.config.baseUrl) {
-        throw new Error('Base URL is not configured, cannot generate signed URL');
-      }
-      
-      // 计算过期时间
-      const expiresAt = Math.floor(Date.now() / 1000) + options.expiration;
-      
-      // 创建签名数据
-      const signatureData = {
-        path: remotePath,
-        method: options.method || 'GET',
-        expiresAt,
-        contentType: options.contentType,
-        responseDisposition: options.responseDisposition,
-        responseType: options.responseType,
-      };
-      
-      // 生成签名
-      const signature = this.generateSignature(signatureData);
-      
-      // 构建URL
-      const baseUrl = this.config.baseUrl.endsWith('/') ? this.config.baseUrl : `${this.config.baseUrl}/`;
-      const encodedPath = encodeURIComponent(remotePath);
-      const url = new URL(`${baseUrl}${encodedPath}`);
-      
-      // 添加查询参数
-      url.searchParams.append('signature', signature);
-      url.searchParams.append('expires', expiresAt.toString());
-      
-      if (options.method && options.method !== 'GET') {
-        url.searchParams.append('method', options.method);
-      }
-      
-      if (options.contentType) {
-        url.searchParams.append('content-type', options.contentType);
-      }
-      
-      if (options.responseDisposition) {
-        url.searchParams.append('response-disposition', options.responseDisposition);
-      }
-      
-      if (options.responseType) {
-        url.searchParams.append('response-type', options.responseType);
-      }
-      
-      return url.toString();
-    } catch (error) {
-      this.logger.error(`Error generating signed URL for ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to generate signed URL: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 获取公共URL
-   * @param remotePath 远程路径
-   */
-  async getPublicUrl(remotePath: string): Promise<string | null> {
-    this.ensureInitialized();
-    
-    try {
-      // 检查文件是否存在
-      if (!await this.fileExists(remotePath)) {
-        return null;
-      }
-      
-      // 获取文件元数据
-      const metadata = await this.getFileMetadata(remotePath);
-      
-      // 检查文件是否公开
-      if (!metadata.isPublic) {
-        return null;
-      }
-      
-      // 如果没有配置基础URL，无法生成公共URL
-      if (!this.config.baseUrl) {
-        return null;
-      }
-      
-      // 构建URL
-      return this.buildPublicUrl(remotePath);
-    } catch (error) {
-      this.logger.error(`Error getting public URL for ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
+      this.logger.warn(`Item ${id} not found: ${error}`);
       return null;
     }
   }
-  
-  /**
-   * 设置文件公共访问权限
-   * @param remotePath 远程路径
-   * @param isPublic 是否公开
-   */
-  async setPublicAccess(remotePath: string, isPublic: boolean): Promise<FileMetadata> {
-    this.ensureInitialized();
-    this.logger.info(`Setting public access for ${remotePath} to ${isPublic}`);
-    
-    try {
-      // 检查文件是否存在
-      if (!await this.fileExists(remotePath)) {
-        throw new Error(`File does not exist at ${remotePath}`);
-      }
-      
-      // 获取文件元数据
-      const metadata = await this.getFileMetadata(remotePath);
-      
-      // 更新公共访问权限
-      metadata.isPublic = isPublic;
-      
-      // 更新URL
-      if (isPublic && this.config.baseUrl) {
-        metadata.url = this.buildPublicUrl(remotePath);
-      } else {
-        delete metadata.url;
-      }
-      
-      // 实际实现中，应将更新后的元数据保存到某处
-      
-      return metadata;
-    } catch (error) {
-      this.logger.error(`Error setting public access for ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to set public access: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 更新文件元数据
-   * @param remotePath 远程路径
-   * @param metadata 元数据
-   */
-  async updateFileMetadata(remotePath: string, metadata: Partial<Record<string, string>>): Promise<FileMetadata> {
-    this.ensureInitialized();
-    this.logger.info(`Updating metadata for ${remotePath}`);
-    
-    try {
-      // 检查文件是否存在
-      if (!await this.fileExists(remotePath)) {
-        throw new Error(`File does not exist at ${remotePath}`);
-      }
-      
-      // 获取现有元数据
-      const existingMetadata = await this.getFileMetadata(remotePath);
-      
-      // 更新元数据
-      Object.assign(existingMetadata, metadata);
-      
-      // 实际实现中，应将更新后的元数据保存到某处
-      
-      return existingMetadata;
-    } catch (error) {
-      this.logger.error(`Error updating metadata for ${remotePath}`, { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Failed to update metadata: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * 获取物理路径
-   * @param remotePath 远程路径
-   */
-  private getPhysicalPath(remotePath: string): string {
-    // 规范化路径
-    const normalizedPath = remotePath.replace(/^\//g, '').replace(/\\/g, '/');
-    return path.join(this.config.rootDir, normalizedPath);
-  }
-  
-  /**
-   * 确保目录存在
-   * @param dirPath 目录路径
-   */
-  private async ensureDirectoryExists(dirPath: string): Promise<void> {
-    try {
-      await fs.access(dirPath, fsSync.constants.F_OK);
-      // 目录已存在
-    } catch (error) {
-      // 目录不存在，创建它
-      if (this.config.createDirs) {
-        await fs.mkdir(dirPath, { recursive: true });
-      } else {
-        throw new Error(`Directory ${dirPath} does not exist and automatic creation is disabled`);
-      }
-    }
-  }
-  
-  /**
-   * 递归删除目录
-   * @param dirPath 目录路径
-   */
-  private async recursiveDeleteDirectory(dirPath: string): Promise<void> {
-    // 使用fs.rm的recursive选项递归删除目录
-    await fs.rm(dirPath, { recursive: true, force: true });
-  }
-  
-  /**
-   * 构建公共URL
-   * @param remotePath 远程路径
-   */
-  private buildPublicUrl(remotePath: string): string {
-    if (!this.config.baseUrl) {
-      return '';
+
+  async updateItem(id: string, updates: KnowledgeItemUpdate): Promise<KnowledgeItem | null> {
+    const item = await this.getItem(id);
+    if (!item) {
+      return null;
     }
     
-    const baseUrl = this.config.baseUrl.endsWith('/') ? this.config.baseUrl : `${this.config.baseUrl}/`;
-    const encodedPath = encodeURIComponent(remotePath);
-    return `${baseUrl}${encodedPath}`;
-  }
-  
-  /**
-   * 生成签名
-   * @param data 签名数据
-   */
-  private generateSignature(data: unknown): string {
-    const jsonData = JSON.stringify(data);
-    const hmac = crypto.createHmac('sha256', this.config.signedUrlSecret || '');
-    hmac.update(jsonData);
-    return hmac.digest('hex');
-  }
-  
-  /**
-   * 确保服务已初始化
-   */
-  private ensureInitialized(): void {
-    if (!this.initialized) {
-      throw new Error('Local storage service is not initialized');
+    const updatedItem = { ...item, ...updates, updated: new Date().toISOString() };
+    const result = await this.storeItem(updatedItem);
+    
+    if (result.status === 'success') {
+      return updatedItem;
     }
+    
+    return null;
+  }
+
+  async deleteItem(id: string): Promise<boolean> {
+    const filePath = this.getPhysicalPath(`${id}.json`);
+    try {
+      await fs.unlink(filePath);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to delete item ${id}: ${error}`);
+      return false;
+    }
+  }
+
+  async listItems(options?: { limit?: number; offset?: number }): Promise<KnowledgeItem[]> {
+    try {
+      const files = await fs.readdir(this.config.rootDir);
+      const jsonFiles = files.filter(file => file.endsWith('.json'));
+      
+      const items: KnowledgeItem[] = [];
+      const limit = options?.limit || 100;
+      const offset = options?.offset || 0;
+      
+      for (let i = offset; i < Math.min(offset + limit, jsonFiles.length); i++) {
+        const file = jsonFiles[i];
+        const id = path.basename(file, '.json');
+        const item = await this.getItem(id);
+        if (item) {
+          items.push(item);
+        }
+      }
+      
+      return items;
+    } catch (error) {
+      this.logger.error(`Failed to list items: ${error}`);
+      return [];
+    }
+  }
+
+  async searchItems(query: string, options?: { limit?: number }): Promise<KnowledgeItem[]> {
+    const allItems = await this.listItems({ limit: 1000 });
+    const searchTerm = query.toLowerCase();
+    
+    const matchingItems = allItems.filter(item => 
+      item.title.toLowerCase().includes(searchTerm) ||
+      item.content.toLowerCase().includes(searchTerm)
+    );
+    
+    const limit = options?.limit || 50;
+    return matchingItems.slice(0, limit);
+  }
+
+  getInfo() {
+    return {
+      id: this.name,
+      name: this.name,
+      version: this.version,
+      status: this.getStatus(),
+      description: 'Local file system storage service'
+    };
+  }
+
+  // Implementation of abstract methods from BaseStorageService
+  async uploadFile(localFilePath: string, remotePath: string, options?: any): Promise<any> {
+    const targetPath = this.getPhysicalPath(remotePath);
+    await this.ensureDirectoryExists(path.dirname(targetPath));
+    await fs.copyFile(localFilePath, targetPath);
+    const stats = await fs.stat(targetPath);
+    return {
+      path: remotePath,
+      size: stats.size,
+      lastModified: stats.mtime,
+      contentType: 'application/octet-stream'
+    };
+  }
+
+  async uploadData(data: Buffer | string, remotePath: string, options?: any): Promise<any> {
+    const targetPath = this.getPhysicalPath(remotePath);
+    await this.ensureDirectoryExists(path.dirname(targetPath));
+    await fs.writeFile(targetPath, data);
+    const stats = await fs.stat(targetPath);
+    return {
+      path: remotePath,
+      size: stats.size,
+      lastModified: stats.mtime,
+      contentType: 'application/octet-stream'
+    };
+  }
+
+  async downloadFile(remotePath: string, localFilePath: string, options?: any): Promise<any> {
+    const sourcePath = this.getPhysicalPath(remotePath);
+    await fs.copyFile(sourcePath, localFilePath);
+    const stats = await fs.stat(sourcePath);
+    return {
+      path: remotePath,
+      size: stats.size,
+      lastModified: stats.mtime,
+      contentType: 'application/octet-stream'
+    };
+  }
+
+  async downloadData(remotePath: string, options?: any): Promise<{ data: Buffer; metadata: any }> {
+    const sourcePath = this.getPhysicalPath(remotePath);
+    const data = await fs.readFile(sourcePath);
+    const stats = await fs.stat(sourcePath);
+    return {
+      data,
+      metadata: {
+        path: remotePath,
+        size: stats.size,
+        lastModified: stats.mtime,
+        contentType: 'application/octet-stream'
+      }
+    };
+  }
+
+  async getFileMetadata(remotePath: string): Promise<any> {
+    const sourcePath = this.getPhysicalPath(remotePath);
+    const stats = await fs.stat(sourcePath);
+    return {
+      path: remotePath,
+      size: stats.size,
+      lastModified: stats.mtime,
+      contentType: 'application/octet-stream'
+    };
+  }
+
+  async getDirectoryMetadata(remotePath: string): Promise<any> {
+    const sourcePath = this.getPhysicalPath(remotePath);
+    const stats = await fs.stat(sourcePath);
+    return {
+      path: remotePath,
+      lastModified: stats.mtime,
+      isDirectory: true
+    };
+  }
+
+  async fileExists(remotePath: string): Promise<boolean> {
+    try {
+      const sourcePath = this.getPhysicalPath(remotePath);
+      const stats = await fs.stat(sourcePath);
+      return stats.isFile();
+    } catch {
+      return false;
+    }
+  }
+
+  async directoryExists(remotePath: string): Promise<boolean> {
+    try {
+      const sourcePath = this.getPhysicalPath(remotePath);
+      const stats = await fs.stat(sourcePath);
+      return stats.isDirectory();
+    } catch {
+      return false;
+    }
+  }
+
+  async listDirectory(remotePath: string, options?: any): Promise<any> {
+    const sourcePath = this.getPhysicalPath(remotePath);
+    const files = await fs.readdir(sourcePath, { withFileTypes: true });
+    return {
+      items: files.map(file => ({
+        name: file.name,
+        path: path.join(remotePath, file.name),
+        isDirectory: file.isDirectory(),
+        size: 0 // Would need additional stat call for actual size
+      }))
+    };
+  }
+
+  async createDirectory(remotePath: string, options?: { isPublic?: boolean }): Promise<any> {
+    const targetPath = this.getPhysicalPath(remotePath);
+    await fs.mkdir(targetPath, { recursive: true });
+    const stats = await fs.stat(targetPath);
+    return {
+      path: remotePath,
+      lastModified: stats.mtime,
+      isDirectory: true
+    };
+  }
+
+  async deleteFile(remotePath: string): Promise<boolean> {
+    try {
+      const sourcePath = this.getPhysicalPath(remotePath);
+      await fs.unlink(sourcePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async deleteDirectory(remotePath: string, recursive?: boolean): Promise<boolean> {
+    try {
+      const sourcePath = this.getPhysicalPath(remotePath);
+      await fs.rmdir(sourcePath, { recursive });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async copyFile(sourceRemotePath: string, targetRemotePath: string, options?: any): Promise<any> {
+    const sourcePath = this.getPhysicalPath(sourceRemotePath);
+    const targetPath = this.getPhysicalPath(targetRemotePath);
+    await this.ensureDirectoryExists(path.dirname(targetPath));
+    await fs.copyFile(sourcePath, targetPath);
+    const stats = await fs.stat(targetPath);
+    return {
+      path: targetRemotePath,
+      size: stats.size,
+      lastModified: stats.mtime,
+      contentType: 'application/octet-stream'
+    };
+  }
+
+  async moveFile(sourceRemotePath: string, targetRemotePath: string, options?: any): Promise<any> {
+    const sourcePath = this.getPhysicalPath(sourceRemotePath);
+    const targetPath = this.getPhysicalPath(targetRemotePath);
+    await this.ensureDirectoryExists(path.dirname(targetPath));
+    await fs.rename(sourcePath, targetPath);
+    const stats = await fs.stat(targetPath);
+    return {
+      path: targetRemotePath,
+      size: stats.size,
+      lastModified: stats.mtime,
+      contentType: 'application/octet-stream'
+    };
+  }
+
+  async generateSignedUrl(remotePath: string, options: any): Promise<string> {
+    // Local storage doesn't support signed URLs
+    throw new Error('Signed URLs not supported for local storage');
+  }
+
+  async getPublicUrl(remotePath: string): Promise<string | null> {
+    // Local storage doesn't support public URLs
+    return null;
+  }
+
+  async setPublicAccess(remotePath: string, isPublic: boolean): Promise<any> {
+    // Local storage doesn't support public access control
+    const metadata = await this.getFileMetadata(remotePath);
+    return metadata;
+  }
+
+  async updateFileMetadata(remotePath: string, metadata: Partial<Record<string, string>>): Promise<any> {
+    // Local storage doesn't support custom metadata
+    const fileMetadata = await this.getFileMetadata(remotePath);
+    return fileMetadata;
+  }
+
+  protected async initializeProvider(): Promise<boolean> {
+    await this.ensureDirectoryExists(this.config.rootDir);
+    return true;
+  }
+
+  protected async shutdownProvider(): Promise<boolean> {
+    // No cleanup needed for local storage
+    return true;
   }
 }

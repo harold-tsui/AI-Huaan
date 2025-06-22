@@ -1,0 +1,123 @@
+{
+  "monitoring": {
+    "enabled": true,
+    "interval": 5,
+    "logRetentionDays": 7,
+    "alerting": {
+      "enabled": true,
+      "channels": [
+        {
+          "type": "console",
+          "enabled": true
+        },
+        {
+          "type": "file",
+          "enabled": true,
+          "path": "./logs/alerts/test-alerts.log"
+        }
+      ]
+    }
+  },
+  "resources": {
+    "cpu": {
+      "warning": 70,
+      "critical": 90,
+      "monitorProcesses": ["node", "mongod", "redis-server"]
+    },
+    "memory": {
+      "warning": 70,
+      "critical": 85,
+      "monitorProcesses": ["node", "mongod", "redis-server"]
+    },
+    "disk": {
+      "warning": 80,
+      "critical": 90,
+      "paths": ["/", "./test-storage", "./logs"]
+    },
+    "network": {
+      "ports": [3001, 3002, 3003, 3004, 3005, 27017, 6379],
+      "checkInterval": 30
+    }
+  },
+  "services": {
+    "app": {
+      "url": "http://localhost:3001/health",
+      "timeout": 5000,
+      "interval": 30,
+      "expectedStatus": 200
+    },
+    "knowledgeGraph": {
+      "url": "http://localhost:3002/health",
+      "timeout": 5000,
+      "interval": 30,
+      "expectedStatus": 200
+    },
+    "documentProcessor": {
+      "url": "http://localhost:3003/health",
+      "timeout": 5000,
+      "interval": 30,
+      "expectedStatus": 200
+    },
+    "search": {
+      "url": "http://localhost:3004/health",
+      "timeout": 5000,
+      "interval": 30,
+      "expectedStatus": 200
+    },
+    "ai": {
+      "url": "http://localhost:3005/health",
+      "timeout": 5000,
+      "interval": 30,
+      "expectedStatus": 200
+    },
+    "mongodb": {
+      "host": "localhost",
+      "port": 27017,
+      "interval": 30,
+      "timeout": 5000
+    },
+    "redis": {
+      "host": "localhost",
+      "port": 6379,
+      "interval": 30,
+      "timeout": 5000
+    }
+  },
+  "tests": {
+    "performance": {
+      "enabled": true,
+      "thresholds": {
+        "responseTime": {
+          "warning": 500,
+          "critical": 1000
+        },
+        "throughput": {
+          "warning": 50,
+          "critical": 20
+        },
+        "errorRate": {
+          "warning": 5,
+          "critical": 10
+        }
+      }
+    },
+    "integration": {
+      "enabled": true,
+      "interval": 300,
+      "timeout": 30000
+    },
+    "endToEnd": {
+      "enabled": true,
+      "interval": 900,
+      "timeout": 60000
+    }
+  },
+  "logging": {
+    "level": "debug",
+    "format": "json",
+    "directory": "./logs/test",
+    "maxSize": "10m",
+    "maxFiles": 5,
+    "compress": true
+  }
+}

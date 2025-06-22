@@ -53,22 +53,22 @@ export async function initializeCaptureServices(): Promise<boolean> {
     }
     
     // 注册处理器
-    const webCaptureProcessor = new (await import('./web-capture-processor')).WebCaptureProcessor(
-      globalAIRoutingService,
-      globalKnowledgeGraphService
-    );
+    const { WebCaptureProcessor } = await import('./web-capture-processor');
+    const aiService = globalAIRoutingService as IAIService;
+    const kgService = globalKnowledgeGraphService as IKnowledgeGraphService;
+    
+    if (!aiService || !kgService) {
+      console.error('AI or Knowledge Graph service is not available for WebCaptureProcessor');
+      return false;
+    }
+
+    const webCaptureProcessor = new WebCaptureProcessor(aiService, kgService);
     globalCaptureService.registerProcessor(webCaptureProcessor);
     
-    const textCaptureProcessor = new (await import('./text-capture-processor')).TextCaptureProcessor(
-      globalAIRoutingService,
-      globalKnowledgeGraphService
-    );
+    const textCaptureProcessor = new (await import('./text-capture-processor')).TextCaptureProcessor();
     globalCaptureService.registerProcessor(textCaptureProcessor);
     
-    const fileCaptureProcessor = new (await import('./file-capture-processor')).FileCaptureProcessor(
-      globalAIRoutingService,
-      globalKnowledgeGraphService
-    );
+    const fileCaptureProcessor = new (await import('./file-capture-processor')).FileCaptureProcessor();
     globalCaptureService.registerProcessor(fileCaptureProcessor);
     
     console.log(`Capture Services Module v${CAPTURE_SERVICES_VERSION} initialized successfully`);

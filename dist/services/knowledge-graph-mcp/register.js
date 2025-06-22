@@ -17,5 +17,5 @@ function registerKnowledgeGraphMCPService() {
     console.info('Registered Knowledge Graph MCP Service to service factory');
 }
 // 自动注册服务
-registerKnowledgeGraphMCPService();
+// registerKnowledgeGraphMCPService(); // 改为在 register-services.ts 中显式调用
 //# sourceMappingURL=register.js.map

@@ -1,0 +1,243 @@
+pipeline {
+    agent {
+        kubernetes {
+            yaml """
+            apiVersion: v1
+            kind: Pod
+            metadata:
+              labels:
+                app: basb-cicd
+            spec:
+              containers:
+              - name: node
+                image: node:18-alpine
+                command:
+                - cat
+                tty: true
+              - name: docker
+                image: docker:20.10.16-dind
+                command:
+                - cat
+                tty: true
+                volumeMounts:
+                - name: docker-sock
+                  mountPath: /var/run/docker.sock
+              - name: kubectl
+                image: bitnami/kubectl:1.25
+                command:
+                - cat
+                tty: true
+              volumes:
+              - name: docker-sock
+                hostPath:
+                  path: /var/run/docker.sock
+            """
+        }
+    }
+    
+    environment {
+        DOCKER_REGISTRY = 'docker.io'
+        DOCKER_NAMESPACE = 'basb'
+        GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+        VERSION = "${env.BUILD_NUMBER}-${GIT_COMMIT_SHORT}"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Code Quality') {
+            steps {
+                container('node') {
+                    sh 'npm ci'
+                    sh 'npm run lint'
+                    sh 'npm run type-check'
+                }
+            }
+        }
+        
+        stage('Unit Tests') {
+            steps {
+                container('node') {
+                    sh 'npm run test:unit'
+                }
+            }
+            post {
+                always {
+                    junit 'test-results/unit/*.xml'
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'coverage/unit',
+                        reportFiles: 'index.html',
+                        reportName: 'Unit Test Coverage'
+                    ])
+                }
+            }
+        }
+        
+        stage('Integration Tests') {
+            steps {
+                container('node') {
+                    sh 'npm run test:integration'
+                }
+            }
+            post {
+                always {
+                    junit 'test-results/integration/*.xml'
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'coverage/integration',
+                        reportFiles: 'index.html',
+                        reportName: 'Integration Test Coverage'
+                    ])
+                }
+            }
+        }
+        
+        stage('Build Docker Images') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'develop'
+                }
+            }
+            steps {
+                container('docker') {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+                        
+                        // API 服务
+                        sh "docker build -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/api-service:${VERSION} ."
+                        sh "docker push ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/api-service:${VERSION}"
+                        
+                        // 知识图谱服务
+                        sh "docker build -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/knowledge-graph:${VERSION} -f ./services/knowledge-graph/Dockerfile ./services/knowledge-graph"
+                        sh "docker push ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/knowledge-graph:${VERSION}"
+                        
+                        // 文档处理服务
+                        sh "docker build -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/document-processing:${VERSION} -f ./services/document-processing/Dockerfile ./services/document-processing"
+                        sh "docker push ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/document-processing:${VERSION}"
+                        
+                        // 搜索服务
+                        sh "docker build -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/search:${VERSION} -f ./services/search/Dockerfile ./services/search"
+                        sh "docker push ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/search:${VERSION}"
+                        
+                        // AI 服务
+                        sh "docker build -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/ai:${VERSION} -f ./services/ai/Dockerfile ./services/ai"
+                        sh "docker push ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/ai:${VERSION}"
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy to Staging') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                container('kubectl') {
+                    withCredentials([file(credentialsId: 'kubeconfig-staging', variable: 'KUBECONFIG')]) {
+                        sh "export KUBECONFIG=${KUBECONFIG}"
+                        
+                        // 更新 Kubernetes 部署
+                        sh "kubectl set image deployment/api-service api-service=${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/api-service:${VERSION} -n basb-staging"
+                        sh "kubectl set image deployment/knowledge-graph knowledge-graph=${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/knowledge-graph:${VERSION} -n basb-staging"
+                        sh "kubectl set image deployment/document-processing document-processing=${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/document-processing:${VERSION} -n basb-staging"
+                        sh "kubectl set image deployment/search search=${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/search:${VERSION} -n basb-staging"
+                        sh "kubectl set image deployment/ai-service ai-service=${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/ai:${VERSION} -n basb-staging"
+                        
+                        // 等待部署完成
+                        sh "kubectl rollout status deployment/api-service -n basb-staging"
+                        sh "kubectl rollout status deployment/knowledge-graph -n basb-staging"
+                        sh "kubectl rollout status deployment/document-processing -n basb-staging"
+                        sh "kubectl rollout status deployment/search -n basb-staging"
+                        sh "kubectl rollout status deployment/ai-service -n basb-staging"
+                    }
+                }
+            }
+            post {
+                success {
+                    echo "Staging deployment successful"
+                    // 运行冒烟测试
+                    sh "curl -f https://staging-api.basb-system.com/health"
+                }
+                failure {
+                    echo "Staging deployment failed"
+                }
+            }
+        }
+        
+        stage('Deploy to Production') {
+            when {
+                branch 'main'
+            }
+            steps {
+                // 生产部署需要手动批准
+                input message: 'Deploy to production?', ok: 'Yes'
+                
+                container('kubectl') {
+                    withCredentials([file(credentialsId: 'kubeconfig-production', variable: 'KUBECONFIG')]) {
+                        sh "export KUBECONFIG=${KUBECONFIG}"
+                        
+                        // 更新 Kubernetes 部署
+                        sh "kubectl set image deployment/api-service api-service=${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/api-service:${VERSION} -n basb-production"
+                        sh "kubectl set image deployment/knowledge-graph knowledge-graph=${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/knowledge-graph:${VERSION} -n basb-production"
+                        sh "kubectl set image deployment/document-processing document-processing=${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/document-processing:${VERSION} -n basb-production"
+                        sh "kubectl set image deployment/search search=${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/search:${VERSION} -n basb-production"
+                        sh "kubectl set image deployment/ai-service ai-service=${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/ai:${VERSION} -n basb-production"
+                        
+                        // 等待部署完成
+                        sh "kubectl rollout status deployment/api-service -n basb-production"
+                        sh "kubectl rollout status deployment/knowledge-graph -n basb-production"
+                        sh "kubectl rollout status deployment/document-processing -n basb-production"
+                        sh "kubectl rollout status deployment/search -n basb-production"
+                        sh "kubectl rollout status deployment/ai-service -n basb-production"
+                    }
+                }
+            }
+            post {
+                success {
+                    echo "Production deployment successful"
+                    // 运行冒烟测试
+                    sh "curl -f https://api.basb-system.com/health"
+                }
+                failure {
+                    echo "Production deployment failed"
+                    // 回滚生产部署
+                    container('kubectl') {
+                        withCredentials([file(credentialsId: 'kubeconfig-production', variable: 'KUBECONFIG')]) {
+                            sh "export KUBECONFIG=${KUBECONFIG}"
+                            sh "kubectl rollout undo deployment/api-service -n basb-production"
+                            sh "kubectl rollout undo deployment/knowledge-graph -n basb-production"
+                            sh "kubectl rollout undo deployment/document-processing -n basb-production"
+                            sh "kubectl rollout undo deployment/search -n basb-production"
+                            sh "kubectl rollout undo deployment/ai-service -n basb-production"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            // 清理工作区
+            cleanWs()
+        }
+        success {
+            // 发送成功通知
+            slackSend(color: 'good', message: "Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+        }
+        failure {
+            // 发送失败通知
+            slackSend(color: 'danger', message: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+        }
+    }
+}

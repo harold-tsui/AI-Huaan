@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # 测试应用服务
+  app-test:
+    build:
+      context: ..
+      dockerfile: DevOps/Dockerfile.test
+    volumes:
+      - ./src:/app/src
+      - ./test-results:/app/test-results
+    environment:
+      - NODE_ENV=test
+      - MONGODB_URI=mongodb://mongodb:27017/basb-test
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    command: npm test
+
+  # MongoDB 服务
+  mongodb:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-test-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=basb-test
+
+  # Redis 服务
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-test-data:/data
+
+volumes:
+  mongodb-test-data:
+  redis-test-data:

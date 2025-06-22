@@ -17,7 +17,8 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
-  setupFilesAfterEnv: [],
+  setupFiles: ['<rootDir>/jest.env.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   globals: {
     'ts-jest': {
       tsconfig: 'tsconfig.test.json'

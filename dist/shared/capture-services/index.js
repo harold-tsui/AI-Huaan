@@ -80,11 +80,18 @@ async function initializeCaptureServices() {
             capture_service_1.globalCaptureService.setAIService(ai_services_1.globalAIRoutingService);
         }
         // 注册处理器
-        const webCaptureProcessor = new (await Promise.resolve().then(() => __importStar(require('./web-capture-processor')))).WebCaptureProcessor(ai_services_1.globalAIRoutingService, knowledge_graph_services_1.globalKnowledgeGraphService);
+        const { WebCaptureProcessor } = await Promise.resolve().then(() => __importStar(require('./web-capture-processor')));
+        const aiService = ai_services_1.globalAIRoutingService;
+        const kgService = knowledge_graph_services_1.globalKnowledgeGraphService;
+        if (!aiService || !kgService) {
+            console.error('AI or Knowledge Graph service is not available for WebCaptureProcessor');
+            return false;
+        }
+        const webCaptureProcessor = new WebCaptureProcessor(aiService, kgService);
         capture_service_1.globalCaptureService.registerProcessor(webCaptureProcessor);
-        const textCaptureProcessor = new (await Promise.resolve().then(() => __importStar(require('./text-capture-processor')))).TextCaptureProcessor(ai_services_1.globalAIRoutingService, knowledge_graph_services_1.globalKnowledgeGraphService);
+        const textCaptureProcessor = new (await Promise.resolve().then(() => __importStar(require('./text-capture-processor')))).TextCaptureProcessor();
         capture_service_1.globalCaptureService.registerProcessor(textCaptureProcessor);
-        const fileCaptureProcessor = new (await Promise.resolve().then(() => __importStar(require('./file-capture-processor')))).FileCaptureProcessor(ai_services_1.globalAIRoutingService, knowledge_graph_services_1.globalKnowledgeGraphService);
+        const fileCaptureProcessor = new (await Promise.resolve().then(() => __importStar(require('./file-capture-processor')))).FileCaptureProcessor();
         capture_service_1.globalCaptureService.registerProcessor(fileCaptureProcessor);
         console.log(`Capture Services Module v${exports.CAPTURE_SERVICES_VERSION} initialized successfully`);
         return true;

@@ -1,5 +1,17 @@
 # 更新日志 (CHANGELOG)
 
+## [0.1.1] - 2024-12-20
+
+### 新增与更新
+
+- **核心存储增强**: 明确 Obsidian 作为系统默认的基础存储服务之一。
+- **配置更新**: 
+  - 在 `.env` 和 `.env.example` 文件中添加了 `OBSIDIAN_API_URL` 和 `OBSIDIAN_VAULT_NAME` 环境变量。
+- **文档更新**:
+  - 更新架构设计文档 (`BASB_Architecture_Design_v1.1.md`)，补充 Obsidian 服务配置和环境变量说明，并将版本号更新至 v1.1。
+  - 更新部署指南 (`DevOps/docs/deployment-guide.md`)，在配置管理部分添加 Obsidian 相关的环境变量说明。
+  - 更新 `README.md` 中的项目版本号至 `0.1.1`。
+
 ## [0.1.0] - 2025-06-14
 
 ### 成果

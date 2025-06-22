@@ -41,7 +41,15 @@ export class OpenAIService implements IAIService {
    */
   constructor() {
     this.logger = new Logger('OpenAIService');
-    const config = ConfigManager.getInstance().getConfig();
+    // Ensure ConfigManager is initialized before getting config
+    const configManager = ConfigManager.getInstance();
+    // Accessing getConfig() implies ensureInitialized() would have been called internally by get() if it were used.
+    // However, getConfig() directly accesses this.config, so we might need to be more explicit or rely on getInstance() to throw if not initialized.
+    // For safety, let's assume getInstance() should throw if it cannot initialize.
+    // If getInstance() itself doesn't guarantee initialization or throw, we might need a dedicated ensureInitialized method call here.
+    // Given the previous errors, it's safer to ensure the instance from getInstance is usable.
+    // A simple check or a more robust mechanism might be needed if getInstance can return a non-null but uninitialized object.
+    const config = configManager.getConfig();
     
     this.apiKey = config.ai?.openai?.apiKey || process.env.OPENAI_API_KEY || '';
     this.organization = config.ai?.openai?.organization || process.env.OPENAI_ORGANIZATION;

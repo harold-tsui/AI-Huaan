@@ -72,6 +72,10 @@ class TextProcessor {
             const prompt = await prompt_manager_1.globalPromptManager.renderTemplate('summary-template', {
                 content: text.length > 8000 ? text.substring(0, 8000) + '...' : text,
             });
+            if (!prompt) {
+                this.logger.error('Failed to render summary template for generateSummary.');
+                return '摘要生成失败 (模板渲染失败)';
+            }
             // 使用AI服务生成摘要
             const result = await ai_services_1.globalAIRoutingService.chat([
                 { role: types_1.MessageRole.SYSTEM, content: { type: types_1.ContentType.TEXT, text: '你是一个专业的文本摘要助手，擅长提取文本的核心内容并生成简洁的摘要。' } },

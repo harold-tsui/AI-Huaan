@@ -1,0 +1,55 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: basb-ingress
+spec:
+  tls:
+  - hosts:
+    - staging.basb-system.com
+    secretName: basb-tls-staging
+  rules:
+  - host: staging.basb-system.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-api-service-staging
+            port:
+              number: 3000
+      - path: /knowledge
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-knowledge-graph-staging
+            port:
+              number: 3001
+      - path: /documents
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-document-processing-staging
+            port:
+              number: 3002
+      - path: /search
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-search-staging
+            port:
+              number: 3003
+      - path: /ai
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-ai-service-staging
+            port:
+              number: 3004
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-frontend-staging
+            port:
+              number: 80

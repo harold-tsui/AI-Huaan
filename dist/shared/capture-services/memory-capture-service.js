@@ -219,12 +219,19 @@ class MemoryCaptureService extends base_capture_service_1.BaseCaptureService {
                 ...options.headers,
             };
             // 发送请求
-            const response = await axios_1.default.get(options.url, {
-                headers,
-                timeout: options.timeout || 30000,
-                responseType: 'text',
-                ...(options.proxy ? { proxy: { host: options.proxy.split(':')[0], port: parseInt(options.proxy.split(':')[1]) || 80 } } : {}),
-            });
+            let response;
+            try {
+                response = await axios_1.default.get(options.url, {
+                    headers,
+                    timeout: options.timeout || 30000,
+                    responseType: 'text',
+                    ...(options.proxy ? { proxy: { host: options.proxy.split(':')[0], port: parseInt(options.proxy.split(':')[1]) || 80 } } : {}),
+                });
+            }
+            catch (error) {
+                this.logger.error(`Failed to fetch web page: ${options.url}`, { error: error instanceof Error ? error : String(error) });
+                throw new Error(`Failed to fetch web page: ${error instanceof Error ? error.message : String(error)}`);
+            }
             // 解析HTML
             const dom = new jsdom_1.JSDOM(response.data, { url: options.url });
             const document = dom.window.document;
@@ -251,10 +258,10 @@ class MemoryCaptureService extends base_capture_service_1.BaseCaptureService {
                 html: response.data,
             };
             if (article) {
-                content.text = article.textContent;
-                content.markdown = this.htmlToMarkdown(article.content);
+                content.text = article.textContent || '';
+                content.markdown = article.content ? this.htmlToMarkdown(article.content) : '';
                 if (!metadata.title && article.title) {
-                    metadata.title = article.title;
+                    metadata.title = article.title || undefined;
                 }
             }
             else {

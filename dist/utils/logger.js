@@ -39,6 +39,9 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Logger = exports.LogLevel = void 0;
+exports.initializeGlobalLogger = initializeGlobalLogger;
+exports.getGlobalLogger = getGlobalLogger;
+console.log('[logger.ts] Module evaluation started.');
 const winston = __importStar(require("winston"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
@@ -52,7 +55,7 @@ var LogLevel;
     LogLevel["VERBOSE"] = "verbose";
 })(LogLevel || (exports.LogLevel = LogLevel = {}));
 // 默认日志配置
-const defaultConfig = {
+const baseDefaultConfig = {
     level: LogLevel.INFO,
     console: true,
     file: true,
@@ -62,19 +65,20 @@ const defaultConfig = {
     format: 'json',
 };
 // 从环境变量加载配置
-function loadConfigFromEnv() {
+function loadConfigFromEnv(defaults) {
     return {
-        level: process.env.LOG_LEVEL || defaultConfig.level,
+        level: process.env.LOG_LEVEL || defaults.level,
         console: process.env.LOG_CONSOLE !== 'false',
         file: process.env.LOG_FILE !== 'false',
-        filePath: process.env.LOG_FILE_PATH || defaultConfig.filePath,
-        maxSize: process.env.LOG_MAX_SIZE || defaultConfig.maxSize,
-        maxFiles: process.env.LOG_MAX_FILES ? parseInt(process.env.LOG_MAX_FILES) : defaultConfig.maxFiles,
-        format: process.env.LOG_FORMAT || defaultConfig.format,
+        filePath: process.env.LOG_FILE_PATH || defaults.filePath,
+        maxSize: process.env.LOG_MAX_SIZE || defaults.maxSize,
+        maxFiles: process.env.LOG_MAX_FILES ? parseInt(process.env.LOG_MAX_FILES) : defaults.maxFiles,
+        format: process.env.LOG_FORMAT || defaults.format,
+        serviceName: process.env.LOG_SERVICE_NAME || defaults.serviceName || 'global',
     };
 }
 // 创建日志格式
-function createLogFormat(format) {
+function createWinstonLogFormat(format) {
     switch (format) {
         case 'json':
             return winston.format.combine(winston.format.timestamp(), winston.format.json());
@@ -92,110 +96,162 @@ function createLogFormat(format) {
     }
 }
 /**
- * 日志工具类
+ * 初始化全局 Logger 配置
+ * @param config Logger 配置对象或部分配置
+ */
+let globalWinstonLogger;
+let globalLoggerConfig = loadConfigFromEnv({
+    ...baseDefaultConfig,
+    serviceName: 'global-uninitialized',
+});
+/**
+ * 初始化全局 Logger 配置和实例
+ * This function should be called once at application startup.
+ * @param config Logger 配置对象或部分配置
+ */
+function initializeGlobalLogger(config) {
+    console.log('[logger.ts/initializeGlobalLogger] Entry. Config provided:', config !== undefined);
+    const initialConfig = {
+        ...baseDefaultConfig,
+        serviceName: 'global', // Default service name for the global logger
+        ...config
+    };
+    globalLoggerConfig = loadConfigFromEnv(initialConfig); // Load env vars over initialConfig
+    const { level, console: useConsole, file: useFile, filePath, maxSize, maxFiles, format, serviceName } = globalLoggerConfig;
+    const transports = [];
+    if (useConsole) {
+        transports.push(new winston.transports.Console({
+            level,
+            format: createWinstonLogFormat(format || 'json'),
+        }));
+    }
+    if (useFile && filePath) {
+        const logDir = path.dirname(filePath);
+        if (!fs.existsSync(logDir)) {
+            fs.mkdirSync(logDir, { recursive: true });
+        }
+        transports.push(new winston.transports.File({
+            level,
+            filename: filePath,
+            maxsize: maxSize ? parseInt(maxSize) * 1024 * 1024 : undefined,
+            maxFiles,
+            format: createWinstonLogFormat(format || 'json'),
+        }));
+    }
+    console.log('[logger.ts/initializeGlobalLogger] About to create winston logger instance. Current globalLoggerConfig:', globalLoggerConfig);
+    globalWinstonLogger = winston.createLogger({
+        level,
+        defaultMeta: { service: serviceName },
+        transports,
+    });
+    globalWinstonLogger.info(`Global logger initialized. Level: ${level}, Service: ${serviceName}`);
+    return globalWinstonLogger;
+}
+/**
+ * 获取全局 Winston Logger 实例。
+ * 必须先调用 initializeGlobalLogger。
+ */
+function getGlobalLogger() {
+    console.log('[logger.ts/getGlobalLogger] Entry. globalWinstonLogger defined:', globalWinstonLogger !== undefined);
+    if (!globalWinstonLogger) {
+        // Fallback to initialize with defaults if not already done, though explicit initialization is preferred.
+        console.error('[logger.ts/getGlobalLogger] CRITICAL_FALLBACK: globalWinstonLogger is undefined. Falling back to initializeGlobalLogger(). This is likely an issue. Stack:', new Error().stack);
+        return initializeGlobalLogger();
+    }
+    return globalWinstonLogger;
+}
+/**
+ * 日志工具类 (Service-specific wrapper around global logger or own instance)
  */
 class Logger {
     /**
      * 构造函数
-     * @param service 服务名称
+     * @param serviceName 服务名称
      */
-    constructor(service) {
-        this.service = service;
-        this.logger = this.createLogger();
+    constructor(serviceName) {
+        console.log(`[logger.ts/Logger.constructor] Entry for service: '${serviceName}'. Attempting to get global logger.`);
+        this.serviceName = serviceName;
+        // By default, service-specific loggers will use the global Winston logger's configuration
+        // but log with their own service name.
+        // If globalWinstonLogger is not yet available, it will be initialized with defaults.
+        const baseLogger = getGlobalLogger();
+        console.log(`[logger.ts/Logger.constructor] Global logger obtained for service: '${serviceName}'. Creating child logger.`);
+        this.loggerInstance = baseLogger.child({ service: this.serviceName });
+        console.log(`[logger.ts/Logger.constructor] Child logger created for service: '${serviceName}'.`);
     }
     /**
-     * 创建Winston日志记录器
+     * 记录 debug 级别的日志
+     * @param message 日志消息
+     * @param meta 元数据
      */
-    createLogger() {
-        const { level, console, file, filePath, maxSize, maxFiles, format } = Logger.config;
-        const transports = [];
-        // 控制台输出
-        if (console) {
-            transports.push(new winston.transports.Console({
-                level,
-                format: createLogFormat(format || 'json'),
-            }));
-        }
-        // 文件输出
-        if (file && filePath) {
-            // 确保日志目录存在
-            const logDir = path.dirname(filePath);
-            if (!fs.existsSync(logDir)) {
-                fs.mkdirSync(logDir, { recursive: true });
-            }
-            transports.push(new winston.transports.File({
-                level,
-                filename: filePath,
-                maxsize: maxSize ? parseInt(maxSize) * 1024 * 1024 : undefined,
-                maxFiles,
-                format: createLogFormat(format || 'json'),
-            }));
-        }
-        return winston.createLogger({
-            level,
-            defaultMeta: { service: this.service },
-            transports,
-        });
+    debug(message, ...meta) {
+        this.loggerInstance.debug(message, ...meta);
     }
     /**
-     * 更新日志配置
+     * 记录 info 级别的日志
+     * @param message 日志消息
+     * @param meta 元数据
+     */
+    info(message, ...meta) {
+        this.loggerInstance.info(message, ...meta);
+    }
+    /**
+     * 记录 warn 级别的日志
+     * @param message 日志消息
+     * @param meta 元数据
+     */
+    warn(message, ...meta) {
+        this.loggerInstance.warn(message, ...meta);
+    }
+    /**
+     * 记录 error 级别的日志
+     * @param message 日志消息
+     * @param meta 元数据
+     */
+    error(message, ...meta) {
+        this.loggerInstance.error(message, ...meta);
+    }
+    /**
+     * 更新全局日志配置并重新初始化全局记录器。
+     * 注意: 这会影响所有使用全局记录器的 Logger 实例。
      * @param config 新的日志配置
      */
+    static updateGlobalConfigAndReinitialize(config) {
+        console.warn('Re-initializing global logger due to config update. This may affect all logger instances.');
+        // Preserve existing serviceName if not overridden by new partial config
+        const newGlobalConfig = { ...globalLoggerConfig, ...config };
+        return initializeGlobalLogger(newGlobalConfig);
+    }
+    // Static updateConfig is kept for compatibility but now updates and reinitializes the global logger.
     static updateConfig(config) {
-        Logger.config = { ...Logger.config, ...config };
+        Logger.updateGlobalConfigAndReinitialize(config);
     }
     /**
-     * 记录错误日志
+     * 记录详细日志 (Verbose)
      * @param message 日志消息
      * @param meta 元数据
      */
-    error(message, meta) {
-        this.logger.error(message, meta);
+    verbose(message, ...meta) {
+        this.loggerInstance.verbose(message, ...meta);
     }
     /**
-     * 记录警告日志
-     * @param message 日志消息
-     * @param meta 元数据
-     */
-    warn(message, meta) {
-        this.logger.warn(message, meta);
-    }
-    /**
-     * 记录信息日志
-     * @param message 日志消息
-     * @param meta 元数据
-     */
-    info(message, meta) {
-        this.logger.info(message, meta);
-    }
-    /**
-     * 记录调试日志
-     * @param message 日志消息
-     * @param meta 元数据
-     */
-    debug(message, meta) {
-        this.logger.debug(message, meta);
-    }
-    /**
-     * 记录详细日志
-     * @param message 日志消息
-     * @param meta 元数据
-     */
-    verbose(message, meta) {
-        this.logger.verbose(message, meta);
-    }
-    /**
-     * 记录异常日志
-     * @param error 错误对象
-     * @param context 上下文信息
+     * 记录异常日志，包括错误信息和堆栈跟踪。
+     * @param error 错误对象，必须是 Error 的实例。
+     * @param context 额外的上下文信息，将与错误信息一起记录。
      */
     exception(error, context) {
-        this.logger.error(`Exception: ${error.message}`, {
+        const metadata = {
             stack: error.stack,
-            ...context,
-        });
+            ...(context || {}),
+        };
+        // 如果 error.name 不是 'Error' (例如 'TypeError', 'RangeError'), 也将其包含在元数据中
+        if (error.name && error.name !== 'Error') {
+            metadata.errorType = error.name;
+        }
+        this.loggerInstance.error(error.message, metadata);
     }
 }
 exports.Logger = Logger;
-Logger.config = loadConfigFromEnv();
+// Static config is now primarily for reference or if a Logger instance needs to deviate
+Logger.currentConfig = globalLoggerConfig;
 //# sourceMappingURL=logger.js.map

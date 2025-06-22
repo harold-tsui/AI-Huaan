@@ -9,12 +9,20 @@ import { Logger } from '../../utils/logger';
 import { globalServiceRegistry } from './service-registry';
 
 export class MCPServiceFactory implements IMCPServiceFactory {
-  private serviceConstructors: Map<string, new (config?: ServiceConfig) => IMCPService>;
+  private serviceConstructors: Map<string, new (...args: any[]) => IMCPService>;
+  private serviceDependencies: Map<string, any[]>;
   private logger: Logger;
 
   constructor() {
     this.serviceConstructors = new Map();
+    this.serviceDependencies = new Map(); // Store dependencies for each service
     this.logger = new Logger('MCPServiceFactory');
+  }
+
+  public clear(): void {
+    this.serviceConstructors.clear();
+    this.serviceDependencies.clear();
+    this.logger.info('Service factory cleared.');
   }
 
   /**
@@ -24,40 +32,59 @@ export class MCPServiceFactory implements IMCPServiceFactory {
    */
   public registerServiceConstructor(
     serviceName: string,
-    serviceConstructor: new (config?: ServiceConfig) => IMCPService
+    constructorOrFactory: ((...args: any[]) => IMCPService) | (new (...args: any[]) => IMCPService),
+    ...dependencies: any[]
   ): void {
     if (this.serviceConstructors.has(serviceName)) {
-      this.logger.warn(`Service constructor for ${serviceName} already registered, overwriting`);
+      this.logger.warn(`Service constructor for ${serviceName} already registered. Skipping.`);
+      return;
     }
-    
-    this.serviceConstructors.set(serviceName, serviceConstructor);
-    this.logger.info(`Registered service constructor for ${serviceName}`);
+    this.serviceConstructors.set(serviceName, constructorOrFactory as any);
+    this.serviceDependencies.set(serviceName, dependencies);
+    this.logger.info(`Registered service constructor or factory for ${serviceName}.`);
   }
 
   /**
    * 创建服务实例
-   * @param serviceName 服务名称
+   * @param name 服务名称
    * @param config 服务配置
    * @returns 服务实例
    */
-  public createService(serviceName: string, config?: ServiceConfig): IMCPService {
-    const ServiceConstructor = this.serviceConstructors.get(serviceName);
-    
-    if (!ServiceConstructor) {
-      this.logger.error(`No service constructor registered for ${serviceName}`);
-      throw new Error(`No service constructor registered for ${serviceName}`);
+  public createService(name: string, config?: ServiceConfig): IMCPService {
+    const constructorOrFactory = this.serviceConstructors.get(name);
+
+    if (!constructorOrFactory) {
+      this.logger.error(`No service constructor or factory registered for ${name}`);
+      throw new Error(`No service constructor or factory registered for ${name}`);
     }
-    
+
     try {
-      const serviceInstance = new ServiceConstructor(config);
-      this.logger.info(`Created service instance for ${serviceName}`);
-      
-      // 自动注册到全局服务注册表
+      const dependencyNames = this.serviceDependencies.get(name)?.[0] || [];
+      const dependencies = dependencyNames.map((depName: string) => {
+        const dependencyInstance = this.getServiceInstance(depName);
+        if (!dependencyInstance) {
+          throw new Error(`Dependency '${depName}' not found for service '${name}'.`);
+        }
+        return dependencyInstance;
+      });
+
+      const args = config ? [...dependencies, config] : dependencies;
+      let serviceInstance: IMCPService;
+
+      // Check if it's a class constructor
+      if (typeof constructorOrFactory === 'function' && constructorOrFactory.prototype && constructorOrFactory.prototype.constructor === constructorOrFactory) {
+        // It's a class, instantiate it with its dependencies
+        serviceInstance = new (constructorOrFactory as unknown as new (...args: any[]) => IMCPService)(...args);
+      } else {
+        // It's a factory function, call it with its dependencies
+        serviceInstance = (constructorOrFactory as unknown as (...args: any[]) => IMCPService)(...args);
+      }
+
+      this.logger.info(`Created service instance for ${name}`);
       globalServiceRegistry.registerService(serviceInstance);
-      
       return serviceInstance;
     } catch (error) {
-      this.logger.error(`Failed to create service instance for ${serviceName}`, { error });
+      this.logger.error(`Failed to create service instance for ${name}`, { error });
       throw error;
     }
   }
@@ -70,7 +97,7 @@ export class MCPServiceFactory implements IMCPServiceFactory {
    */
   public async createAndInitializeService(serviceName: string, config?: ServiceConfig): Promise<IMCPService> {
     const service = this.createService(serviceName, config);
-    
+
     try {
       await service.initialize();
       this.logger.info(`Initialized service instance for ${serviceName}`);
@@ -81,6 +108,19 @@ export class MCPServiceFactory implements IMCPServiceFactory {
       globalServiceRegistry.unregisterService(service.getInfo().id);
       throw error;
     }
+  }
+
+  /**
+   * 获取已注册的服务实例
+   * @param serviceNameOrAlias 服务名称或别名
+   * @returns 服务实例或undefined
+   */
+  public getServiceInstance<T extends IMCPService>(serviceNameOrAlias: string): T | undefined {
+    const service = globalServiceRegistry.getService(serviceNameOrAlias);
+    if (!service) {
+      this.logger.warn(`Service with name or alias '${serviceNameOrAlias}' not found in registry.`);
+    }
+    return service as T | undefined;
   }
 
   /**

@@ -46,6 +46,7 @@ const axios_1 = __importDefault(require("axios"));
 const cheerio = __importStar(require("cheerio"));
 const jsdom_1 = require("jsdom");
 const readability_1 = require("@mozilla/readability");
+const turndown_1 = __importDefault(require("turndown"));
 const types_1 = require("../ai-services/types");
 const types_2 = require("../knowledge-graph-services/types");
 const base_capture_processor_1 = require("./base-capture-processor");
@@ -54,13 +55,8 @@ const types_3 = require("./types");
  * 网页捕获处理器
  */
 class WebCaptureProcessor extends base_capture_processor_1.BaseCaptureProcessor {
-    /**
-     * 构造函数
-     * @param aiService AI服务
-     * @param knowledgeGraphService 知识图谱服务
-     */
     constructor(aiService, knowledgeGraphService) {
-        super('web-capture-processor', 'Processes web content by extracting readable content, metadata, and creating knowledge graph nodes', [types_3.CaptureSourceType.WEB]);
+        super('WebCaptureProcessor', 'Processes web content capture items', [types_3.CaptureSourceType.WEB]);
         this.aiService = aiService;
         this.knowledgeGraphService = knowledgeGraphService;
     }
@@ -68,7 +64,17 @@ class WebCaptureProcessor extends base_capture_processor_1.BaseCaptureProcessor 
      * 处理网页内容
      * @param item 捕获项
      */
-    async processWebContent(item) {
+    async process(item) {
+        if (!this.supportsSourceType(item.sourceType)) {
+            return {
+                success: false,
+                message: `Processor ${this.getName()} cannot handle source type ${item.sourceType}`,
+                processorName: this.getName(),
+            };
+        }
+        return this.processWebContent(item, this.aiService || undefined, this.knowledgeGraphService);
+    }
+    async processWebContent(item, aiService, knowledgeGraphService) {
         this.logger.info(`Processing web content: ${item.metadata.url || 'Unknown URL'}`);
         try {
             // 检查URL
@@ -93,19 +99,51 @@ class WebCaptureProcessor extends base_capture_processor_1.BaseCaptureProcessor 
             // 更新捕获项内容
             const updatedContent = {
                 ...item.content,
-                ...parsedContent,
+                html: parsedContent.html || item.content.html,
+                text: parsedContent.text || item.content.text,
+                markdown: parsedContent.markdown || item.content.markdown,
+                fileUrl: parsedContent.fileUrl || item.content.fileUrl,
             };
-            // 如果有知识图谱服务，创建知识图谱节点
-            if (this.knowledgeGraphService) {
-                await this.createKnowledgeGraphNode(item, updatedContent);
-            }
-            // 如果有AI服务，生成摘要和标签
             let summary = '';
             let suggestedTags = [];
-            if (this.aiService && updatedContent.text) {
-                const enrichments = await this.enrichContentWithAI(updatedContent.text, item.metadata.title || '');
-                summary = enrichments.summary;
-                suggestedTags = enrichments.tags;
+            if (aiService && parsedContent.text) {
+                try {
+                    // Use chat method to generate summary
+                    const summaryResult = await aiService.chat([
+                        { role: types_1.MessageRole.USER, content: { type: types_1.ContentType.TEXT, text: `Please summarize the following text in about 200 characters: ${parsedContent.text.substring(0, 2000)}` } }
+                    ]);
+                    const summaryContent = Array.isArray(summaryResult.message.content)
+                        ? summaryResult.message.content[0]?.text || ''
+                        : summaryResult.message.content.text || '';
+                    summary = summaryContent;
+                    // Use chat method to extract keywords
+                    const keywordsResult = await aiService.chat([
+                        { role: types_1.MessageRole.USER, content: { type: types_1.ContentType.TEXT, text: `Extract 10 keywords from the following text, return as comma-separated list: ${parsedContent.text.substring(0, 2000)}` } }
+                    ]);
+                    const keywordsContent = Array.isArray(keywordsResult.message.content)
+                        ? keywordsResult.message.content[0]?.text || ''
+                        : keywordsResult.message.content.text || '';
+                    suggestedTags = keywordsContent.split(',').map((tag) => tag.trim()).slice(0, 10);
+                }
+                catch (aiError) {
+                    this.logger.warn(`AI processing failed for ${url}: ${aiError instanceof Error ? aiError.message : String(aiError)}`);
+                }
+            }
+            if (knowledgeGraphService) {
+                try {
+                    await knowledgeGraphService.createNode({
+                        type: types_2.NodeType.WEBPAGE,
+                        label: extractedMetadata.title || 'Untitled Web Page',
+                        properties: {
+                            ...extractedMetadata,
+                            url: url,
+                            webPageId: `web:${url}`
+                        },
+                    });
+                }
+                catch (kgError) {
+                    this.logger.warn(`Knowledge graph node creation failed for ${url}: ${kgError instanceof Error ? kgError.message : String(kgError)}`);
+                }
             }
             return {
                 success: true,
@@ -193,15 +231,22 @@ class WebCaptureProcessor extends base_capture_processor_1.BaseCaptureProcessor 
      * @param article Readability文章
      */
     convertToMarkdown(article) {
-        // 实际实现中应使用专门的HTML到Markdown转换库
-        // 这里仅为简单示例
-        let markdown = `# ${article.title || 'Untitled'}\n\n`;
-        if (article.byline) {
-            markdown += `*By ${article.byline}*\n\n`;
+        const turndownService = new turndown_1.default({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+        let markdown = '';
+        if (article.content) {
+            markdown = turndownService.turndown(article.content);
         }
-        // 简单地将HTML内容转换为纯文本
-        const content = article.textContent || '';
-        markdown += content.replace(/\n{3,}/g, '\n\n');
+        else if (article.textContent) {
+            // Fallback if HTML content is not available, though less ideal
+            markdown = `# ${article.title || 'Untitled'}\n\n`;
+            if (article.byline) {
+                markdown += `*By ${article.byline}*\n\n`;
+            }
+            markdown += article.textContent;
+        }
+        else {
+            markdown = `# ${article.title || 'Untitled'}\n\nNo content extracted.`;
+        }
         return markdown;
     }
     /**

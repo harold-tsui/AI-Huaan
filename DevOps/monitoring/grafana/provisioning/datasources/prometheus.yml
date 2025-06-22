@@ -1,0 +1,49 @@
+# BASB 系统 Grafana 数据源配置文件
+# 文件路径: monitoring/grafana/provisioning/datasources/prometheus.yml
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s
+      queryTimeout: 120s
+      httpMethod: POST
+      manageAlerts: true
+      alertmanagerUid: alertmanager
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: tempo
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - name: traceID
+          matcherRegex: "traceID=(\\w+)"
+          url: "${__value.raw}"
+          datasourceUid: tempo
+
+  - name: Elasticsearch
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch:9200
+    database: "[basb-logs-]YYYY.MM.DD"
+    editable: false
+    jsonData:
+      timeField: "@timestamp"
+      esVersion: 7.10.0
+      maxConcurrentShardRequests: 5
+      logMessageField: message
+      logLevelField: level

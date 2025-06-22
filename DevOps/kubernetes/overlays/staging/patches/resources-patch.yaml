@@ -1,0 +1,218 @@
+# API 服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-api-service
+spec:
+  template:
+    spec:
+      containers:
+      - name: api-service
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+---
+# 知识图谱服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-knowledge-graph
+spec:
+  template:
+    spec:
+      containers:
+      - name: knowledge-graph
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+---
+# 文档处理服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-document-processing
+spec:
+  template:
+    spec:
+      containers:
+      - name: document-processing
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+---
+# 搜索服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-search
+spec:
+  template:
+    spec:
+      containers:
+      - name: search
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+---
+# AI 服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-ai-service
+spec:
+  template:
+    spec:
+      containers:
+      - name: ai-service
+        resources:
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+---
+# 前端服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-frontend
+spec:
+  template:
+    spec:
+      containers:
+      - name: frontend
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+---
+# MongoDB 资源配置补丁
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: basb-mongodb
+spec:
+  template:
+    spec:
+      containers:
+      - name: mongodb
+        resources:
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+---
+# Redis 资源配置补丁
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: basb-redis
+spec:
+  template:
+    spec:
+      containers:
+      - name: redis
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+---
+# Prometheus 资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-prometheus
+spec:
+  template:
+    spec:
+      containers:
+      - name: prometheus
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+---
+# Grafana 资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-grafana
+spec:
+  template:
+    spec:
+      containers:
+      - name: grafana
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+---
+# Elasticsearch 资源配置补丁
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: basb-elasticsearch
+spec:
+  template:
+    spec:
+      containers:
+      - name: elasticsearch
+        resources:
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+        env:
+        - name: ES_JAVA_OPTS
+          value: "-Xms512m -Xmx512m"
+---
+# Kibana 资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-kibana
+spec:
+  template:
+    spec:
+      containers:
+      - name: kibana
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+          requests:
+            cpu: "200m"
+            memory: "512Mi"

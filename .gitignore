@@ -1,0 +1,73 @@
+# 依赖目录
+node_modules
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+package-lock.json.old
+
+# 编译输出
+/dist
+/build
+/out
+/lib
+
+# 测试覆盖率报告
+/coverage
+/.nyc_output
+
+# 环境变量文件（除了示例文件）
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# 日志文件
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 编辑器和IDE文件
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.sublime-project
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 操作系统文件
+.DS_Store
+Thumb.db
+.directory
+
+# TypeScript缓存
+*.tsbuildinfo
+
+# 临时文件和目录
+/tmp
+/temp
+*.tmp
+*.temp
+
+# 本地测试和调试文件
+/test-results
+/test-storage
+/test_*.py
+*.test.js.snap
+
+# 其他项目特定文件
+trace.json
+trace/
+nohup.out
+status_response.txt
+response.txt
+tsc-errors.txt
+tsc-current-errors.txt

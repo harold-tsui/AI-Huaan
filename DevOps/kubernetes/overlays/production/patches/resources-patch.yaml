@@ -1,0 +1,225 @@
+# API 服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-api-service
+spec:
+  template:
+    spec:
+      containers:
+      - name: api-service
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+---
+# 知识图谱服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-knowledge-graph
+spec:
+  template:
+    spec:
+      containers:
+      - name: knowledge-graph
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+---
+# 文档处理服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-document-processing
+spec:
+  template:
+    spec:
+      containers:
+      - name: document-processing
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+---
+# 搜索服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-search
+spec:
+  template:
+    spec:
+      containers:
+      - name: search
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+---
+# AI 服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-ai-service
+spec:
+  template:
+    spec:
+      containers:
+      - name: ai-service
+        resources:
+          limits:
+            cpu: "4"
+            memory: "8Gi"
+          requests:
+            cpu: "2"
+            memory: "4Gi"
+---
+# 前端服务资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-frontend
+spec:
+  template:
+    spec:
+      containers:
+      - name: frontend
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+---
+# MongoDB 资源配置补丁
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: basb-mongodb
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: mongodb
+        resources:
+          limits:
+            cpu: "4"
+            memory: "8Gi"
+          requests:
+            cpu: "2"
+            memory: "4Gi"
+---
+# Redis 资源配置补丁
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: basb-redis
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: redis
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+---
+# Prometheus 资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-prometheus
+spec:
+  template:
+    spec:
+      containers:
+      - name: prometheus
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+---
+# Grafana 资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-grafana
+spec:
+  template:
+    spec:
+      containers:
+      - name: grafana
+        resources:
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+---
+# Elasticsearch 资源配置补丁
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: basb-elasticsearch
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: elasticsearch
+        resources:
+          limits:
+            cpu: "4"
+            memory: "8Gi"
+          requests:
+            cpu: "2"
+            memory: "4Gi"
+        env:
+        - name: ES_JAVA_OPTS
+          value: "-Xms2g -Xmx2g"
+        - name: discovery.type
+          value: "zen"
+        - name: cluster.initial_master_nodes
+          value: "basb-elasticsearch-0,basb-elasticsearch-1,basb-elasticsearch-2"
+---
+# Kibana 资源配置补丁
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basb-kibana
+spec:
+  template:
+    spec:
+      containers:
+      - name: kibana
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"

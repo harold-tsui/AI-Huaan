@@ -41,6 +41,7 @@ import * as mime from 'mime-types';
 import * as crypto from 'crypto';
 import { Readable } from 'stream';
 import { BaseStorageService } from './base-storage-service';
+import { ServiceConfig } from '../mcp-core/types';
 import {
   CopyOptions,
   DirectoryMetadata,
@@ -77,7 +78,6 @@ export interface S3StorageConfig {
  */
 export class S3StorageService extends BaseStorageService {
   protected config: S3StorageConfig;
-  protected serviceConfig: any; // 存储传递给父类的配置
   private s3Client: S3Client;
   private initialized: boolean = false;
   
@@ -89,28 +89,22 @@ export class S3StorageService extends BaseStorageService {
    * 构造函数
    * @param config 配置
    */
-  constructor(config: S3StorageConfig) {
-    // 创建一个符合 ServiceConfig 接口的配置对象
-    const serviceConfig = {
-      logLevel: 'info',
+  constructor(s3Config: S3StorageConfig) {
+    const serviceConfig: ServiceConfig = {
+      logLevel: 'info', // Default or derive from s3Config if applicable
       timeout: 30000,
       maxRetries: 3,
-      cacheTTL: 3600
+      cacheTTL: 3600,
+      // Add other ServiceConfig defaults as needed
     };
-    
-    // 将 serviceConfig 传递给 BaseStorageService 构造函数
-    super('S3Storage', '1.0.0', StorageProviderType.S3, '', serviceConfig);
-    
-    // 存储 serviceConfig 以供后续使用
-    this.serviceConfig = serviceConfig;
-    
-    // 初始化配置，设置默认值
+    super('S3Storage', '1.0.0', StorageProviderType.S3, s3Config.bucket, serviceConfig); // Pass bucket as basePath
     this.config = {
-      ...config,
-      tempDir: config.tempDir || '/tmp/s3-storage',
-      maxPartSize: config.maxPartSize || this.DEFAULT_PART_SIZE,
-      maxConcurrentUploads: config.maxConcurrentUploads || this.DEFAULT_CONCURRENT_UPLOADS,
+      ...s3Config,
+      tempDir: s3Config.tempDir || '/tmp/s3-storage',
+      maxPartSize: s3Config.maxPartSize || this.DEFAULT_PART_SIZE,
+      maxConcurrentUploads: s3Config.maxConcurrentUploads || this.DEFAULT_CONCURRENT_UPLOADS,
     };
+    // this.serviceConfig is not a property of BaseStorageService or S3StorageService, removing it.
   }
   
   /**

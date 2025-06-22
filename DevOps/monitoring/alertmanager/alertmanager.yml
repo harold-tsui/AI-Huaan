@@ -1,0 +1,144 @@
+# BASB 系统 Alertmanager 配置文件
+# 文件路径: monitoring/alertmanager/alertmanager.yml
+
+global:
+  resolve_timeout: 5m  # 解决超时时间
+  smtp_smarthost: 'smtp.example.com:587'  # SMTP 服务器
+  smtp_from: 'alertmanager@basb.example.com'  # 发件人
+  smtp_auth_username: 'alertmanager@basb.example.com'  # SMTP 用户名
+  smtp_auth_password: 'password'  # SMTP 密码
+  smtp_require_tls: true  # 是否需要 TLS
+
+# 路由配置
+route:
+  group_by: ['alertname', 'job', 'severity']  # 按这些标签分组
+  group_wait: 30s  # 初始等待时间
+  group_interval: 5m  # 同一组内的告警间隔
+  repeat_interval: 4h  # 重复告警间隔
+  receiver: 'email-notifications'  # 默认接收者
+
+  # 路由规则
+  routes:
+    # 关键告警路由
+    - match:
+        severity: critical
+      receiver: 'pager-duty-critical'
+      continue: true
+      group_wait: 0s  # 关键告警立即通知
+      repeat_interval: 1h  # 关键告警每小时重复
+
+    # 警告告警路由
+    - match:
+        severity: warning
+      receiver: 'slack-notifications'
+      continue: true
+      group_wait: 1m
+      repeat_interval: 2h
+
+    # 系统告警路由
+    - match_re:
+        service: ^(node|cadvisor)$
+      receiver: 'system-team'
+      continue: true
+
+    # 数据库告警路由
+    - match_re:
+        service: ^(mongodb|redis)$
+      receiver: 'database-team'
+      continue: true
+
+    # 应用告警路由
+    - match_re:
+        service: ^(api|knowledge-graph|document-processor|search|ai)$
+      receiver: 'app-team'
+      continue: true
+
+# 抑制规则
+inhibit_rules:
+  # 如果有关键告警，抑制相同实例的警告告警
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['instance', 'job']
+
+  # 如果有实例宕机告警，抑制该实例的所有其他告警
+  - source_match:
+      alertname: ServiceDown
+    target_match_re:
+      alertname: ^(?!ServiceDown).*$
+    equal: ['instance']
+
+# 接收者配置
+receivers:
+  # 默认邮件通知
+  - name: 'email-notifications'
+    email_configs:
+      - to: 'team@basb.example.com'
+        send_resolved: true
+        html: |
+          {{ if eq .Status "firing" }}
+            <h1 style="color: #FF0000">{{ .CommonLabels.alertname }}</h1>
+          {{ else }}
+            <h1 style="color: #00FF00">{{ .CommonLabels.alertname }} - 已解决</h1>
+          {{ end }}
+          <p><strong>告警状态:</strong> {{ .Status }}</p>
+          <p><strong>告警详情:</strong></p>
+          <ul>
+          {{ range .Alerts }}
+            <li>
+              <p><strong>告警:</strong> {{ .Labels.alertname }}</p>
+              <p><strong>严重性:</strong> {{ .Labels.severity }}</p>
+              <p><strong>服务:</strong> {{ .Labels.job }}</p>
+              <p><strong>实例:</strong> {{ .Labels.instance }}</p>
+              <p><strong>摘要:</strong> {{ .Annotations.summary }}</p>
+              <p><strong>描述:</strong> {{ .Annotations.description }}</p>
+              <p><strong>开始时间:</strong> {{ .StartsAt }}</p>
+            </li>
+          {{ end }}
+          </ul>
+
+  # PagerDuty 关键告警
+  - name: 'pager-duty-critical'
+    pagerduty_configs:
+      - service_key: '<pagerduty-service-key>'
+        send_resolved: true
+        description: '{{ .CommonLabels.alertname }}'
+        details:
+          severity: '{{ .CommonLabels.severity }}'
+          summary: '{{ .CommonAnnotations.summary }}'
+          description: '{{ .CommonAnnotations.description }}'
+
+  # Slack 通知
+  - name: 'slack-notifications'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX'
+        channel: '#basb-alerts'
+        send_resolved: true
+        title: '{{ if eq .Status "firing" }}:fire: {{ else }}:green_heart: {{ end }} {{ .CommonLabels.alertname }}'
+        text: |
+          {{ if eq .Status "firing" }}:fire: *告警触发*{{ else }}:green_heart: *告警解决*{{ end }}
+          *告警:* {{ .CommonLabels.alertname }}
+          *严重性:* {{ .CommonLabels.severity }}
+          *服务:* {{ .CommonLabels.job }}
+          *实例:* {{ .CommonLabels.instance }}
+          *摘要:* {{ .CommonAnnotations.summary }}
+          *描述:* {{ .CommonAnnotations.description }}
+
+  # 系统团队
+  - name: 'system-team'
+    email_configs:
+      - to: 'system-team@basb.example.com'
+        send_resolved: true
+
+  # 数据库团队
+  - name: 'database-team'
+    email_configs:
+      - to: 'database-team@basb.example.com'
+        send_resolved: true
+
+  # 应用团队
+  - name: 'app-team'
+    email_configs:
+      - to: 'app-team@basb.example.com'
+        send_resolved: true

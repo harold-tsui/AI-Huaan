@@ -1,0 +1,46 @@
+# Elasticsearch 配置文件
+
+cluster.name: basb-logging
+node.name: basb-es-node-1
+node.master: true
+node.data: true
+
+# 网络设置
+network.host: 0.0.0.0
+http.port: 9200
+
+# 发现设置
+discovery.type: single-node
+
+# 路径设置
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+# 内存设置
+bootstrap.memory_lock: true
+
+# 安全设置
+xpack.security.enabled: true
+xpack.license.self_generated.type: basic
+
+# 跨域设置
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.cors.allow-methods: OPTIONS, HEAD, GET, POST, PUT, DELETE
+http.cors.allow-headers: X-Requested-With, X-Auth-Token, Content-Type, Content-Length, Authorization
+
+# 索引设置
+action.auto_create_index: .monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*
+
+# 日志保留策略
+indices.lifecycle.name: "basb-logs-policy"
+indices.lifecycle.rollover_alias: "basb-logs"
+
+# 性能设置
+thread_pool.search.size: 30
+thread_pool.search.queue_size: 1000
+thread_pool.write.size: 30
+thread_pool.write.queue_size: 1000
+
+# 快照设置
+path.repo: /usr/share/elasticsearch/snapshots

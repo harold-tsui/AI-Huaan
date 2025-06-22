@@ -1,0 +1,574 @@
+# BASB 系统 CI/CD 工作流配置 - GitHub Actions
+# 文件路径: .github/workflows/main.yml
+
+name: BASB CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '部署环境 (staging, production)'
+        required: true
+        default: 'staging'
+      deploy_type:
+        description: '部署类型 (blue-green, rolling, canary)'
+        required: true
+        default: 'blue-green'
+
+jobs:
+  # 代码质量检查
+  code-quality:
+    name: 代码质量检查
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 运行 ESLint
+        run: npm run lint
+
+      - name: 运行 Prettier
+        run: npm run format:check
+
+      - name: 运行 TypeScript 类型检查
+        run: npm run type-check
+
+      - name: 运行安全扫描
+        run: npm audit --production
+
+  # 单元测试
+  unit-test:
+    name: 单元测试
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 运行单元测试
+        run: npm test
+
+      - name: 上传测试覆盖率报告
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage/
+
+  # 构建应用
+  build:
+    name: 构建应用
+    runs-on: ubuntu-latest
+    needs: unit-test
+    strategy:
+      matrix:
+        service: [api, knowledge-graph, document-processor, search, ai]
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建 ${{ matrix.service }} 服务
+        run: npm run build:${{ matrix.service }}
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: 登录到 Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: 提取元数据
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: basb/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      - name: 构建并推送 Docker 镜像
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./services/${{ matrix.service }}/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 集成测试
+  integration-test:
+    name: 集成测试
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name != 'pull_request'
+    services:
+      mongodb:
+        image: mongo:5.0
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: basb_user
+          MONGO_INITDB_ROOT_PASSWORD: basb_password
+        options: >
+          --health-cmd "mongo --eval 'db.runCommand({ ping: 1 })'" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
+
+      redis:
+        image: redis:6.2
+        ports:
+          - 6379:6379
+        options: >
+          --health-cmd "redis-cli ping" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 运行集成测试
+        run: npm run test:integration
+        env:
+          MONGODB_URI: mongodb://basb_user:basb_password@localhost:27017/basb?authSource=admin
+          REDIS_URI: redis://localhost:6379/0
+
+  # 部署到测试环境
+  deploy-staging:
+    name: 部署到测试环境
+    runs-on: ubuntu-latest
+    needs: integration-test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    environment:
+      name: staging
+      url: https://staging.basb.example.com
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+
+      - name: 配置 AWS 凭证
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+
+      - name: 安装 Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.0.0
+
+      - name: Terraform 初始化
+        run: |
+          cd infrastructure/terraform
+          terraform init
+
+      - name: Terraform 验证
+        run: |
+          cd infrastructure/terraform
+          terraform validate
+
+      - name: Terraform 计划
+        run: |
+          cd infrastructure/terraform
+          terraform plan -var-file=staging.tfvars -out=tfplan
+
+      - name: Terraform 应用
+        run: |
+          cd infrastructure/terraform
+          terraform apply -auto-approve tfplan
+
+      - name: 部署应用
+        run: |
+          # 获取 EC2 实例 IP
+          APP_INSTANCE_IPS=$(aws ec2 describe-instances --filters "Name=tag:Environment,Values=staging" "Name=tag:Project,Values=basb" "Name=tag:Name,Values=basb-app-*" --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
+          
+          # 部署到每个应用服务器
+          for IP in $APP_INSTANCE_IPS; do
+            echo "部署到 $IP..."
+            ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ec2-user@$IP "cd /opt/basb && ./restart.sh"
+          done
+
+      - name: 验证部署
+        run: |
+          # 获取负载均衡器 DNS
+          ALB_DNS=$(aws elbv2 describe-load-balancers --names basb-alb --query "LoadBalancers[0].DNSName" --output text)
+          
+          # 验证 API 健康状态
+          curl -s -o /dev/null -w "%{http_code}" https://$ALB_DNS/health | grep 200
+
+  # 部署到生产环境
+  deploy-production:
+    name: 部署到生产环境
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://basb.example.com
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+
+      - name: 配置 AWS 凭证
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+
+      - name: 安装 Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.0.0
+
+      - name: Terraform 初始化
+        run: |
+          cd infrastructure/terraform
+          terraform init
+
+      - name: Terraform 验证
+        run: |
+          cd infrastructure/terraform
+          terraform validate
+
+      - name: Terraform 计划
+        run: |
+          cd infrastructure/terraform
+          terraform plan -var-file=production.tfvars -out=tfplan
+
+      - name: Terraform 应用
+        run: |
+          cd infrastructure/terraform
+          terraform apply -auto-approve tfplan
+
+      - name: 部署应用 - 蓝绿部署
+        if: github.event.inputs.deploy_type == 'blue-green' || github.event.inputs.deploy_type == ''
+        run: |
+          # 获取当前活动环境（蓝或绿）
+          ACTIVE_ENV=$(aws ssm get-parameter --name "/basb/production/active-environment" --query "Parameter.Value" --output text)
+          
+          # 确定目标环境
+          if [ "$ACTIVE_ENV" == "blue" ]; then
+            TARGET_ENV="green"
+          else
+            TARGET_ENV="blue"
+          fi
+          
+          echo "当前活动环境: $ACTIVE_ENV, 目标环境: $TARGET_ENV"
+          
+          # 获取目标环境的 EC2 实例 IP
+          TARGET_INSTANCE_IPS=$(aws ec2 describe-instances --filters "Name=tag:Environment,Values=production" "Name=tag:Project,Values=basb" "Name=tag:DeploymentGroup,Values=$TARGET_ENV" --query "Reservations[*].Instances[*].PrivateIpAddress" --output text)
+          
+          # 部署到目标环境的每个应用服务器
+          for IP in $TARGET_INSTANCE_IPS; do
+            echo "部署到 $IP..."
+            ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ec2-user@$IP "cd /opt/basb && ./restart.sh"
+          done
+          
+          # 验证目标环境
+          for IP in $TARGET_INSTANCE_IPS; do
+            echo "验证 $IP..."
+            HEALTH_STATUS=$(ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ec2-user@$IP "curl -s -o /dev/null -w %{http_code} http://localhost:3000/health")
+            if [ "$HEALTH_STATUS" != "200" ]; then
+              echo "错误: $IP 健康检查失败"
+              exit 1
+            fi
+          done
+          
+          # 切换流量到目标环境
+          aws elbv2 modify-listener --listener-arn ${{ secrets.PRODUCTION_LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ secrets.PRODUCTION_TARGET_GROUP_ARN_PREFIX }}-$TARGET_ENV
+          
+          # 更新活动环境参数
+          aws ssm put-parameter --name "/basb/production/active-environment" --value "$TARGET_ENV" --type "String" --overwrite
+          
+          echo "部署完成，流量已切换到 $TARGET_ENV 环境"
+
+      - name: 部署应用 - 滚动部署
+        if: github.event.inputs.deploy_type == 'rolling'
+        run: |
+          # 获取所有生产环境的 EC2 实例 IP
+          INSTANCE_IPS=$(aws ec2 describe-instances --filters "Name=tag:Environment,Values=production" "Name=tag:Project,Values=basb" "Name=tag:Name,Values=basb-app-*" --query "Reservations[*].Instances[*].PrivateIpAddress" --output text)
+          
+          # 逐个部署到每个应用服务器
+          for IP in $INSTANCE_IPS; do
+            echo "部署到 $IP..."
+            
+            # 从负载均衡器中移除实例
+            INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=private-ip-address,Values=$IP" --query "Reservations[0].Instances[0].InstanceId" --output text)
+            aws elbv2 deregister-targets --target-group-arn ${{ secrets.PRODUCTION_TARGET_GROUP_ARN }} --targets Id=$INSTANCE_ID
+            
+            # 等待连接耗尽
+            echo "等待连接耗尽..."
+            sleep 30
+            
+            # 部署新版本
+            ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ec2-user@$IP "cd /opt/basb && ./restart.sh"
+            
+            # 验证健康状态
+            echo "验证 $IP..."
+            HEALTH_STATUS=$(ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ec2-user@$IP "curl -s -o /dev/null -w %{http_code} http://localhost:3000/health")
+            if [ "$HEALTH_STATUS" != "200" ]; then
+              echo "错误: $IP 健康检查失败"
+              exit 1
+            fi
+            
+            # 将实例添加回负载均衡器
+            aws elbv2 register-targets --target-group-arn ${{ secrets.PRODUCTION_TARGET_GROUP_ARN }} --targets Id=$INSTANCE_ID
+            
+            # 等待实例变为健康状态
+            echo "等待实例变为健康状态..."
+            sleep 30
+          done
+          
+          echo "滚动部署完成"
+
+      - name: 部署应用 - 金丝雀部署
+        if: github.event.inputs.deploy_type == 'canary'
+        run: |
+          # 获取所有生产环境的 EC2 实例
+          INSTANCE_IDS=$(aws ec2 describe-instances --filters "Name=tag:Environment,Values=production" "Name=tag:Project,Values=basb" "Name=tag:Name,Values=basb-app-*" --query "Reservations[*].Instances[*].InstanceId" --output text)
+          
+          # 将实例 ID 转换为数组
+          IFS=' ' read -r -a INSTANCE_ID_ARRAY <<< "$INSTANCE_IDS"
+          
+          # 计算金丝雀实例数量（20%）
+          TOTAL_INSTANCES=${#INSTANCE_ID_ARRAY[@]}
+          CANARY_COUNT=$(( TOTAL_INSTANCES / 5 ))
+          if [ "$CANARY_COUNT" -lt 1 ]; then
+            CANARY_COUNT=1
+          fi
+          
+          echo "总实例数: $TOTAL_INSTANCES, 金丝雀实例数: $CANARY_COUNT"
+          
+          # 选择金丝雀实例
+          CANARY_INSTANCES=()
+          for (( i=0; i<$CANARY_COUNT; i++ )); do
+            CANARY_INSTANCES+=(${INSTANCE_ID_ARRAY[$i]})
+          done
+          
+          # 部署到金丝雀实例
+          for INSTANCE_ID in "${CANARY_INSTANCES[@]}"; do
+            IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].PrivateIpAddress" --output text)
+            echo "部署到金丝雀实例 $INSTANCE_ID ($IP)..."
+            
+            # 从主目标组中移除实例
+            aws elbv2 deregister-targets --target-group-arn ${{ secrets.PRODUCTION_TARGET_GROUP_ARN }} --targets Id=$INSTANCE_ID
+            
+            # 将实例添加到金丝雀目标组
+            aws elbv2 register-targets --target-group-arn ${{ secrets.PRODUCTION_CANARY_TARGET_GROUP_ARN }} --targets Id=$INSTANCE_ID
+            
+            # 部署新版本
+            ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ec2-user@$IP "cd /opt/basb && ./restart.sh"
+            
+            # 验证健康状态
+            HEALTH_STATUS=$(ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ec2-user@$IP "curl -s -o /dev/null -w %{http_code} http://localhost:3000/health")
+            if [ "$HEALTH_STATUS" != "200" ]; then
+              echo "错误: 金丝雀实例 $INSTANCE_ID 健康检查失败"
+              exit 1
+            fi
+          done
+          
+          # 配置监听器规则，将 20% 的流量路由到金丝雀目标组
+          aws elbv2 modify-listener --listener-arn ${{ secrets.PRODUCTION_LISTENER_ARN }} --default-actions '[{"Type":"forward","ForwardConfig":{"TargetGroups":[{"TargetGroupArn":"${{ secrets.PRODUCTION_TARGET_GROUP_ARN }}","Weight":80},{"TargetGroupArn":"${{ secrets.PRODUCTION_CANARY_TARGET_GROUP_ARN }}","Weight":20}]}}]'
+          
+          echo "金丝雀部署完成，20% 的流量已路由到新版本"
+          
+          # 等待确认金丝雀部署是否成功
+          echo "等待 10 分钟观察金丝雀部署..."
+          sleep 600
+          
+          # 检查是否有告警
+          ALARM_STATE=$(aws cloudwatch describe-alarms --alarm-names "BASB-Canary-Error-Rate" --query "MetricAlarms[0].StateValue" --output text)
+          if [ "$ALARM_STATE" == "ALARM" ]; then
+            echo "金丝雀部署出现告警，回滚部署"
+            
+            # 将金丝雀实例恢复到旧版本
+            for INSTANCE_ID in "${CANARY_INSTANCES[@]}"; do
+              IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].PrivateIpAddress" --output text)
+              echo "回滚金丝雀实例 $INSTANCE_ID ($IP)..."
+              
+              # 从金丝雀目标组中移除实例
+              aws elbv2 deregister-targets --target-group-arn ${{ secrets.PRODUCTION_CANARY_TARGET_GROUP_ARN }} --targets Id=$INSTANCE_ID
+              
+              # 恢复旧版本
+              ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ec2-user@$IP "cd /opt/basb && ./rollback.sh"
+              
+              # 将实例添加回主目标组
+              aws elbv2 register-targets --target-group-arn ${{ secrets.PRODUCTION_TARGET_GROUP_ARN }} --targets Id=$INSTANCE_ID
+            done
+            
+            # 恢复流量路由
+            aws elbv2 modify-listener --listener-arn ${{ secrets.PRODUCTION_LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ secrets.PRODUCTION_TARGET_GROUP_ARN }}
+            
+            echo "金丝雀部署已回滚"
+            exit 1
+          else
+            echo "金丝雀部署观察期通过，继续完整部署"
+            
+            # 部署到剩余实例
+            for (( i=$CANARY_COUNT; i<$TOTAL_INSTANCES; i++ )); do
+              INSTANCE_ID=${INSTANCE_ID_ARRAY[$i]}
+              IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].PrivateIpAddress" --output text)
+              echo "部署到实例 $INSTANCE_ID ($IP)..."
+              
+              # 从主目标组中移除实例
+              aws elbv2 deregister-targets --target-group-arn ${{ secrets.PRODUCTION_TARGET_GROUP_ARN }} --targets Id=$INSTANCE_ID
+              
+              # 等待连接耗尽
+              sleep 30
+              
+              # 部署新版本
+              ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ec2-user@$IP "cd /opt/basb && ./restart.sh"
+              
+              # 验证健康状态
+              HEALTH_STATUS=$(ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ec2-user@$IP "curl -s -o /dev/null -w %{http_code} http://localhost:3000/health")
+              if [ "$HEALTH_STATUS" != "200" ]; then
+                echo "错误: 实例 $INSTANCE_ID 健康检查失败"
+                exit 1
+              fi
+              
+              # 将实例添加回主目标组
+              aws elbv2 register-targets --target-group-arn ${{ secrets.PRODUCTION_TARGET_GROUP_ARN }} --targets Id=$INSTANCE_ID
+              
+              # 等待实例变为健康状态
+              sleep 30
+            done
+            
+            # 将金丝雀实例从金丝雀目标组移回主目标组
+            for INSTANCE_ID in "${CANARY_INSTANCES[@]}"; do
+              echo "将金丝雀实例 $INSTANCE_ID 移回主目标组..."
+              aws elbv2 deregister-targets --target-group-arn ${{ secrets.PRODUCTION_CANARY_TARGET_GROUP_ARN }} --targets Id=$INSTANCE_ID
+              aws elbv2 register-targets --target-group-arn ${{ secrets.PRODUCTION_TARGET_GROUP_ARN }} --targets Id=$INSTANCE_ID
+            done
+            
+            # 恢复流量路由
+            aws elbv2 modify-listener --listener-arn ${{ secrets.PRODUCTION_LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ secrets.PRODUCTION_TARGET_GROUP_ARN }}
+            
+            echo "完整部署完成"
+          fi
+
+      - name: 验证生产部署
+        run: |
+          # 获取负载均衡器 DNS
+          ALB_DNS=$(aws elbv2 describe-load-balancers --names basb-alb --query "LoadBalancers[0].DNSName" --output text)
+          
+          # 验证 API 健康状态
+          HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://$ALB_DNS/health)
+          if [ "$HEALTH_STATUS" != "200" ]; then
+            echo "错误: 生产环境健康检查失败"
+            exit 1
+          fi
+          
+          # 验证各个服务
+          for SERVICE in api knowledge-graph document-processor search ai; do
+            SERVICE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://$ALB_DNS/api/$SERVICE/status)
+            if [ "$SERVICE_STATUS" != "200" ]; then
+              echo "错误: $SERVICE 服务状态检查失败"
+              exit 1
+            fi
+          done
+          
+          echo "生产部署验证通过"
+
+  # 通知部署结果
+  notify:
+    name: 通知部署结果
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    steps:
+      - name: 检查部署结果
+        id: check_result
+        run: |
+          if [ "${{ needs.deploy-production.result }}" == "success" ]; then
+            echo "::set-output name=status::success"
+            echo "::set-output name=message::✅ BASB 系统已成功部署到生产环境"
+          elif [ "${{ needs.deploy-staging.result }}" == "success" ]; then
+            echo "::set-output name=status::partial"
+            echo "::set-output name=message::⚠️ BASB 系统已部署到测试环境，但生产环境部署失败"
+          else
+            echo "::set-output name=status::failure"
+            echo "::set-output name=message::❌ BASB 系统部署失败"
+          fi
+
+      - name: 发送 Slack 通知
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ steps.check_result.outputs.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          text: ${{ steps.check_result.outputs.message }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: 发送邮件通知
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port: ${{ secrets.MAIL_PORT }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: ${{ steps.check_result.outputs.message }}
+          body: |
+            BASB 系统部署状态通知
+            
+            分支: ${{ github.ref }}
+            提交: ${{ github.sha }}
+            触发者: ${{ github.actor }}
+            工作流: ${{ github.workflow }}
+            
+            测试环境部署结果: ${{ needs.deploy-staging.result }}
+            生产环境部署结果: ${{ needs.deploy-production.result }}
+            
+            详情请查看: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: BASB CI/CD <${{ secrets.MAIL_USERNAME }}>

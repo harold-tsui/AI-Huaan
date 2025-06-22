@@ -1,0 +1,53 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - api-service.yaml
+  - knowledge-graph.yaml
+  - document-processing.yaml
+  - search.yaml
+  - ai-service.yaml
+  - databases.yaml
+  - ingress.yaml
+  - monitoring.yaml
+  - config.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: basb-system
+  app.kubernetes.io/managed-by: kustomize
+
+commonAnnotations:
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/description: "Building a Second Brain (BASB) System"
+
+namePrefix: basb-
+
+images:
+  - name: basb/api
+    newTag: latest
+  - name: basb/knowledge-graph
+    newTag: latest
+  - name: basb/document-processing
+    newTag: latest
+  - name: basb/search
+    newTag: latest
+  - name: basb/ai
+    newTag: latest
+  - name: basb/frontend
+    newTag: latest
+
+configMapGenerator:
+  - name: basb-version
+    literals:
+      - VERSION=1.0.0
+      - BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+secretGenerator:
+  - name: basb-tls
+    type: kubernetes.io/tls
+    files:
+      - tls.crt=dummy/tls.crt
+      - tls.key=dummy/tls.key
+
+generatorOptions:
+  disableNameSuffixHash: true

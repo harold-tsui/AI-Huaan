@@ -92,6 +92,11 @@ export class TextProcessor implements ICaptureProcessor {
       const prompt = await globalPromptManager.renderTemplate('summary-template', {
         content: text.length > 8000 ? text.substring(0, 8000) + '...' : text,
       });
+  
+      if (!prompt) {
+        this.logger.error('Failed to render summary template for generateSummary.');
+        return '摘要生成失败 (模板渲染失败)';
+      }
       
       // 使用AI服务生成摘要
       const result = await globalAIRoutingService.chat(

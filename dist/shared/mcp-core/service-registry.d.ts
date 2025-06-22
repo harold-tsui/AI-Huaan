@@ -17,6 +17,7 @@ export declare class MCPServiceRegistry implements IMCPServiceRegistry {
      * 注销服务
      * @param serviceId 服务ID
      */
+    unregisterAll(): void;
     unregisterService(serviceId: string): void;
     /**
      * 获取服务

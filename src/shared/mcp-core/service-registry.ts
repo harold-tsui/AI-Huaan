@@ -36,6 +36,11 @@ export class MCPServiceRegistry implements IMCPServiceRegistry {
    * 注销服务
    * @param serviceId 服务ID
    */
+  public unregisterAll(): void {
+    this.services.clear();
+    this.logger.info('All services unregistered.');
+  }
+
   public unregisterService(serviceId: string): void {
     if (this.services.has(serviceId)) {
       const service = this.services.get(serviceId);

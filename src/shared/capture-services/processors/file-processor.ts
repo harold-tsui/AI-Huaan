@@ -4,17 +4,20 @@
  * 处理文件类型的捕获项
  */
 
-import { Logger } from '../../../utils/logger';
-import { globalAIRoutingService } from '../../ai-services';
-import { globalPromptManager } from '../../ai-services/prompt-manager';
-import { ContentType, MessageRole } from '../../ai-services/types';
-import { globalTextProcessor } from './text-processor';
 import {
   CaptureItem,
+  CaptureItemContent,
   CaptureItemProcessingResult,
   CaptureSourceType,
   ICaptureProcessor,
 } from '../types';
+import { ContentType, MessageRole } from '../../ai-services/types';
+import { globalAIRoutingService } from '../../ai-services';
+import { Logger } from '../../../utils/logger';
+import { Readable } from 'stream';
+import { FileTypeResult, fromBuffer } from 'file-type';
+// import { extractText } from './extract-text'; // Module not found, temporarily commented out
+import { globalTextProcessor } from './text-processor';
 
 /**
  * 文件处理器实现
@@ -145,14 +148,9 @@ export class FileProcessor implements ICaptureProcessor {
     const textProcessingResult = await globalTextProcessor.processCaptureItem(textItem);
     
     // 合并处理结果
-    result.summary = textProcessingResult.summary;
-    result.keyInsights = textProcessingResult.keyInsights;
-    result.entities = textProcessingResult.entities;
-    result.sentiment = textProcessingResult.sentiment;
-    result.topics = textProcessingResult.topics;
-    result.readingTime = textProcessingResult.readingTime;
-    result.complexity = textProcessingResult.complexity;
-    result.suggestedTags = textProcessingResult.suggestedTags;
+    Object.assign(result, textProcessingResult);
+    // Ensure success is not overwritten if textProcessingResult.success is false but we had initial success
+    result.success = result.success && textProcessingResult.success;
     
     // 根据文件类型添加特定的处理
     if (mimeType === 'text/markdown') {
@@ -202,14 +200,8 @@ export class FileProcessor implements ICaptureProcessor {
       const textProcessingResult = await globalTextProcessor.processCaptureItem(textItem);
       
       // 合并处理结果
-      result.summary = textProcessingResult.summary;
-      result.keyInsights = textProcessingResult.keyInsights;
-      result.entities = textProcessingResult.entities;
-      result.sentiment = textProcessingResult.sentiment;
-      result.topics = textProcessingResult.topics;
-      result.readingTime = textProcessingResult.readingTime;
-      result.complexity = textProcessingResult.complexity;
-      result.suggestedTags = textProcessingResult.suggestedTags;
+      Object.assign(result, textProcessingResult);
+      result.success = result.success && textProcessingResult.success;
     } else {
       // 如果没有提取的文本，则添加一个提示信息
       result.message = `需要外部文档解析器来处理 ${mimeType} 类型的文件`;
@@ -249,11 +241,8 @@ export class FileProcessor implements ICaptureProcessor {
       const textProcessingResult = await globalTextProcessor.processCaptureItem(textItem);
       
       // 合并处理结果
-      result.summary = textProcessingResult.summary;
-      result.keyInsights = textProcessingResult.keyInsights;
-      result.entities = textProcessingResult.entities;
-      result.topics = textProcessingResult.topics;
-      result.suggestedTags = textProcessingResult.suggestedTags;
+      Object.assign(result, textProcessingResult);
+      result.success = result.success && textProcessingResult.success;
     } else {
       // 如果没有提取的文本，则添加一个提示信息
       result.message = `需要OCR服务来处理 ${mimeType} 类型的图片文件`;

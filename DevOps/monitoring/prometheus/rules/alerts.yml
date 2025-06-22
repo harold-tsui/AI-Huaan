@@ -1,0 +1,225 @@
+# BASB 系统 Prometheus 告警规则
+# 文件路径: monitoring/prometheus/rules/alerts.yml
+
+groups:
+  # 系统级别告警
+  - name: system_alerts
+    rules:
+      # 主机 CPU 使用率高
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "高 CPU 使用率 ({{ $labels.instance }})"
+          description: "主机 CPU 使用率超过 80% 已持续 5 分钟\n  当前值: {{ $value }}%"
+
+      # 主机内存使用率高
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "高内存使用率 ({{ $labels.instance }})"
+          description: "主机内存使用率超过 85% 已持续 5 分钟\n  当前值: {{ $value }}%"
+
+      # 主机磁盘使用率高
+      - alert: HighDiskUsage
+        expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/"} * 100) / node_filesystem_size_bytes{mountpoint="/"}) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "高磁盘使用率 ({{ $labels.instance }})"
+          description: "主机磁盘使用率超过 85% 已持续 5 分钟\n  当前值: {{ $value }}%"
+
+      # 主机磁盘将满
+      - alert: DiskWillFillIn4Hours
+        expr: predict_linear(node_filesystem_free_bytes{mountpoint="/"}[1h], 4 * 3600) < 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "磁盘空间即将耗尽 ({{ $labels.instance }})"
+          description: "根据当前使用趋势，磁盘空间将在 4 小时内耗尽"
+
+      # 主机负载高
+      - alert: HighLoad
+        expr: node_load1 / on(instance) count(node_cpu_seconds_total{mode="idle"}) by (instance) > 1.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "高系统负载 ({{ $labels.instance }})"
+          description: "系统负载超过 CPU 核心数的 1.5 倍已持续 5 分钟\n  当前值: {{ $value }}"
+
+  # 服务级别告警
+  - name: service_alerts
+    rules:
+      # 服务实例宕机
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "服务宕机 ({{ $labels.instance }})"
+          description: "服务 {{ $labels.job }} 实例 {{ $labels.instance }} 已宕机超过 1 分钟"
+
+      # API 服务高错误率
+      - alert: APIHighErrorRate
+        expr: sum(rate(http_requests_total{job="api",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="api"}[5m])) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API 服务高错误率"
+          description: "API 服务 5xx 错误率超过 5% 已持续 2 分钟\n  当前值: {{ $value }}%"
+
+      # API 服务高延迟
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="api"}[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API 服务高延迟"
+          description: "API 服务 95 百分位请求延迟超过 1 秒已持续 5 分钟\n  当前值: {{ $value }}秒"
+
+      # 知识图谱服务高错误率
+      - alert: KnowledgeGraphHighErrorRate
+        expr: sum(rate(http_requests_total{job="knowledge-graph",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="knowledge-graph"}[5m])) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "知识图谱服务高错误率"
+          description: "知识图谱服务 5xx 错误率超过 5% 已持续 2 分钟\n  当前值: {{ $value }}%"
+
+      # 文档处理服务高错误率
+      - alert: DocumentProcessorHighErrorRate
+        expr: sum(rate(http_requests_total{job="document-processor",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="document-processor"}[5m])) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "文档处理服务高错误率"
+          description: "文档处理服务 5xx 错误率超过 5% 已持续 2 分钟\n  当前值: {{ $value }}%"
+
+      # 搜索服务高错误率
+      - alert: SearchHighErrorRate
+        expr: sum(rate(http_requests_total{job="search",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="search"}[5m])) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "搜索服务高错误率"
+          description: "搜索服务 5xx 错误率超过 5% 已持续 2 分钟\n  当前值: {{ $value }}%"
+
+      # AI 服务高错误率
+      - alert: AIHighErrorRate
+        expr: sum(rate(http_requests_total{job="ai",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="ai"}[5m])) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AI 服务高错误率"
+          description: "AI 服务 5xx 错误率超过 5% 已持续 2 分钟\n  当前值: {{ $value }}%"
+
+  # 数据库级别告警
+  - name: database_alerts
+    rules:
+      # MongoDB 连接数高
+      - alert: MongoDBHighConnections
+        expr: mongodb_connections{state="current"} / mongodb_connections{state="available"} * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MongoDB 连接数高"
+          description: "MongoDB 连接数超过可用连接数的 80% 已持续 5 分钟\n  当前值: {{ $value }}%"
+
+      # MongoDB 复制延迟高
+      - alert: MongoDBReplicationLag
+        expr: mongodb_mongod_replset_member_optime_date{state="SECONDARY"} - on(set) group_left() mongodb_mongod_replset_member_optime_date{state="PRIMARY"} > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MongoDB 复制延迟高"
+          description: "MongoDB 副本集复制延迟超过 10 秒已持续 5 分钟\n  当前值: {{ $value }}秒"
+
+      # Redis 内存使用率高
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis 内存使用率高"
+          description: "Redis 内存使用率超过 80% 已持续 5 分钟\n  当前值: {{ $value }}%"
+
+      # Redis 连接数高
+      - alert: RedisHighConnections
+        expr: redis_connected_clients / redis_config_maxclients * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis 连接数高"
+          description: "Redis 连接数超过最大连接数的 80% 已持续 5 分钟\n  当前值: {{ $value }}%"
+
+  # 业务级别告警
+  - name: business_alerts
+    rules:
+      # 用户注册率下降
+      - alert: UserRegistrationRateDropped
+        expr: rate(user_registrations_total[1h]) < 0.5 * avg_over_time(rate(user_registrations_total[1h])[1d:1h])
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "用户注册率下降"
+          description: "用户注册率下降超过 50% 已持续 1 小时\n  当前值: {{ $value }}/小时"
+
+      # 文档处理失败率高
+      - alert: DocumentProcessingFailureRateHigh
+        expr: sum(rate(document_processing_failures_total[5m])) / sum(rate(document_processing_total[5m])) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "文档处理失败率高"
+          description: "文档处理失败率超过 10% 已持续 5 分钟\n  当前值: {{ $value }}%"
+
+      # 知识图谱查询失败率高
+      - alert: KnowledgeGraphQueryFailureRateHigh
+        expr: sum(rate(knowledge_graph_query_failures_total[5m])) / sum(rate(knowledge_graph_queries_total[5m])) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "知识图谱查询失败率高"
+          description: "知识图谱查询失败率超过 10% 已持续 5 分钟\n  当前值: {{ $value }}%"
+
+      # 搜索查询失败率高
+      - alert: SearchQueryFailureRateHigh
+        expr: sum(rate(search_query_failures_total[5m])) / sum(rate(search_queries_total[5m])) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "搜索查询失败率高"
+          description: "搜索查询失败率超过 10% 已持续 5 分钟\n  当前值: {{ $value }}%"
+
+      # AI 服务处理失败率高
+      - alert: AIProcessingFailureRateHigh
+        expr: sum(rate(ai_processing_failures_total[5m])) / sum(rate(ai_processing_total[5m])) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI 服务处理失败率高"
+          description: "AI 服务处理失败率超过 10% 已持续 5 分钟\n  当前值: {{ $value }}%"

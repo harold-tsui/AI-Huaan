@@ -50,6 +50,6 @@ export declare class PromptManager implements IPromptManager {
     /**
      * 渲染模板
      */
-    renderTemplate(templateIdOrString: string, variables: Record<string, string>): Promise<string>;
+    renderTemplate(id: string, data: Record<string, any>): Promise<string | null>;
 }
 export declare const globalPromptManager: PromptManager;

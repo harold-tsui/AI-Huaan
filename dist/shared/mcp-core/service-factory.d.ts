@@ -6,21 +6,23 @@
 import { IMCPService, IMCPServiceFactory, ServiceConfig } from './types';
 export declare class MCPServiceFactory implements IMCPServiceFactory {
     private serviceConstructors;
+    private serviceDependencies;
     private logger;
     constructor();
+    clear(): void;
     /**
      * 注册服务构造函数
      * @param serviceName 服务名称
      * @param serviceConstructor 服务构造函数
      */
-    registerServiceConstructor(serviceName: string, serviceConstructor: new (config?: ServiceConfig) => IMCPService): void;
+    registerServiceConstructor(serviceName: string, constructorOrFactory: ((...args: any[]) => IMCPService) | (new (...args: any[]) => IMCPService), ...dependencies: any[]): void;
     /**
      * 创建服务实例
-     * @param serviceName 服务名称
+     * @param name 服务名称
      * @param config 服务配置
      * @returns 服务实例
      */
-    createService(serviceName: string, config?: ServiceConfig): IMCPService;
+    createService(name: string, config?: ServiceConfig): IMCPService;
     /**
      * 创建并初始化服务实例
      * @param serviceName 服务名称
@@ -28,6 +30,12 @@ export declare class MCPServiceFactory implements IMCPServiceFactory {
      * @returns 初始化后的服务实例
      */
     createAndInitializeService(serviceName: string, config?: ServiceConfig): Promise<IMCPService>;
+    /**
+     * 获取已注册的服务实例
+     * @param serviceNameOrAlias 服务名称或别名
+     * @returns 服务实例或undefined
+     */
+    getServiceInstance<T extends IMCPService>(serviceNameOrAlias: string): T | undefined;
     /**
      * 批量创建并初始化服务
      * @param serviceConfigs 服务配置数组

@@ -1,0 +1,113 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: basb-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: SAMEORIGIN";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload";
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "10254"
+    # 启用 CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    # 启用限速
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+    # 启用缓存
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_cache static-cache;
+      proxy_cache_valid 200 302 30m;
+      proxy_cache_valid 404 1m;
+      proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+      proxy_cache_bypass $http_cache_control;
+      add_header X-Cache-Status $upstream_cache_status;
+    # 启用 WAF
+    nginx.ingress.kubernetes.io/enable-modsecurity: "true"
+    nginx.ingress.kubernetes.io/enable-owasp-core-rules: "true"
+spec:
+  tls:
+  - hosts:
+    - basb-system.com
+    - www.basb-system.com
+    - api.basb-system.com
+    secretName: basb-tls
+  rules:
+  - host: api.basb-system.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-api-service
+            port:
+              number: 3000
+  - host: www.basb-system.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-frontend
+            port:
+              number: 80
+  - host: basb-system.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-api-service
+            port:
+              number: 3000
+      - path: /knowledge
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-knowledge-graph
+            port:
+              number: 3001
+      - path: /documents
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-document-processing
+            port:
+              number: 3002
+      - path: /search
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-search
+            port:
+              number: 3003
+      - path: /ai
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-ai-service
+            port:
+              number: 3004
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: basb-frontend
+            port:
+              number: 80

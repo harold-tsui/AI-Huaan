@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "msedge",
+            "name": "http://localhost:8081/api/organization/execute",
+            "request": "launch",
+            "url": "http://localhost:8081/api/organization/execute"
+        }
+    ]
+}

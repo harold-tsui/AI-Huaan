@@ -1,0 +1,53 @@
+# BASB 系统 Grafana 仪表盘配置文件
+# 文件路径: monitoring/grafana/provisioning/dashboards/dashboards.yml
+
+apiVersion: 1
+
+providers:
+  # 系统监控仪表盘
+  - name: 'System Dashboards'
+    orgId: 1
+    folder: 'System'
+    type: file
+    disableDeletion: true
+    editable: false
+    updateIntervalSeconds: 60
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards/system
+
+  # 应用监控仪表盘
+  - name: 'Application Dashboards'
+    orgId: 1
+    folder: 'Application'
+    type: file
+    disableDeletion: true
+    editable: false
+    updateIntervalSeconds: 60
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards/application
+
+  # 数据库监控仪表盘
+  - name: 'Database Dashboards'
+    orgId: 1
+    folder: 'Database'
+    type: file
+    disableDeletion: true
+    editable: false
+    updateIntervalSeconds: 60
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards/database
+
+  # 业务监控仪表盘
+  - name: 'Business Dashboards'
+    orgId: 1
+    folder: 'Business'
+    type: file
+    disableDeletion: true
+    editable: false
+    updateIntervalSeconds: 60
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards/business

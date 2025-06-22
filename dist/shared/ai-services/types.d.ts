@@ -148,6 +148,9 @@ export interface IAIRoutingService {
     chat(messages: Message[], options?: ChatOptions): Promise<ChatResult>;
     chatStream(messages: Message[], options?: ChatOptions): AsyncGenerator<ChatStreamEvent, void, unknown>;
 }
+/**
+ * 提示模板对象
+ */
 export interface PromptTemplate {
     id: string;
     name: string;
@@ -161,15 +164,50 @@ export interface PromptTemplate {
     created: string;
     modified: string;
 }
+/**
+ * 提示模板管理器接口
+ */
 export interface IPromptManager {
+    /**
+     * 获取指定ID的提示模板
+     * @param id 模板ID
+     * @returns 模板对象或null（如果未找到）
+     */
     getTemplate(id: string): Promise<PromptTemplate | null>;
+    /**
+     * 创建新的提示模板
+     * @param template 模板数据 (不包含id, created, modified)
+     * @returns 创建的模板对象
+     */
     createTemplate(template: Omit<PromptTemplate, 'id' | 'created' | 'modified'>): Promise<PromptTemplate>;
+    /**
+     * 更新现有的提示模板
+     * @param id 要更新的模板ID
+     * @param template 要更新的模板数据 (部分或全部，不包含id, created, modified)
+     * @returns 更新后的模板对象或null（如果未找到）
+     */
     updateTemplate(id: string, template: Partial<Omit<PromptTemplate, 'id' | 'created' | 'modified'>>): Promise<PromptTemplate | null>;
+    /**
+     * 删除指定ID的提示模板
+     * @param id 模板ID
+     * @returns 如果删除成功则为true，否则为false
+     */
     deleteTemplate(id: string): Promise<boolean>;
+    /**
+     * 列出所有提示模板，可选择过滤
+     * @param options 可选的过滤条件 (例如，按类别、标签、搜索关键词)
+     * @returns 模板对象数组
+     */
     listTemplates(options?: {
         category?: string;
         tags?: string[];
         search?: string;
     }): Promise<PromptTemplate[]>;
-    renderTemplate(templateIdOrString: string, variables: Record<string, string>): Promise<string>;
+    /**
+     * 渲染指定ID的提示模板
+     * @param id 模板ID
+     * @param data 用于填充模板变量的数据对象
+     * @returns 渲染后的提示字符串或null（如果模板未找到或渲染失败）
+     */
+    renderTemplate(id: string, data: Record<string, any>): Promise<string | null>;
 }

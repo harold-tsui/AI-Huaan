@@ -103,29 +103,26 @@ class S3StorageService extends base_storage_service_1.BaseStorageService {
      * 构造函数
      * @param config 配置
      */
-    constructor(config) {
-        // 创建一个符合 ServiceConfig 接口的配置对象
+    constructor(s3Config) {
         const serviceConfig = {
-            logLevel: 'info',
+            logLevel: 'info', // Default or derive from s3Config if applicable
             timeout: 30000,
             maxRetries: 3,
-            cacheTTL: 3600
+            cacheTTL: 3600,
+            // Add other ServiceConfig defaults as needed
         };
-        // 将 serviceConfig 传递给 BaseStorageService 构造函数
-        super('S3Storage', '1.0.0', types_1.StorageProviderType.S3, '', serviceConfig);
+        super('S3Storage', '1.0.0', types_1.StorageProviderType.S3, s3Config.bucket, serviceConfig); // Pass bucket as basePath
         this.initialized = false;
         // 分段上传的默认设置
         this.DEFAULT_PART_SIZE = 5 * 1024 * 1024; // 5MB
         this.DEFAULT_CONCURRENT_UPLOADS = 5;
-        // 存储 serviceConfig 以供后续使用
-        this.serviceConfig = serviceConfig;
-        // 初始化配置，设置默认值
         this.config = {
-            ...config,
-            tempDir: config.tempDir || '/tmp/s3-storage',
-            maxPartSize: config.maxPartSize || this.DEFAULT_PART_SIZE,
-            maxConcurrentUploads: config.maxConcurrentUploads || this.DEFAULT_CONCURRENT_UPLOADS,
+            ...s3Config,
+            tempDir: s3Config.tempDir || '/tmp/s3-storage',
+            maxPartSize: s3Config.maxPartSize || this.DEFAULT_PART_SIZE,
+            maxConcurrentUploads: s3Config.maxConcurrentUploads || this.DEFAULT_CONCURRENT_UPLOADS,
         };
+        // this.serviceConfig is not a property of BaseStorageService or S3StorageService, removing it.
     }
     /**
      * 初始化提供者
