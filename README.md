@@ -1,6 +1,5 @@
 # AI第二大脑系统
-
-基于MCP（微服务组件平台）的AI第二大脑系统，集成知识管理与动态用户上下文，实现个人知识的智能捕获、处理、连接和激活。
+基于Obsidian的第二大脑（个人知识管理）应用，实现Tiago Forte的Building a Second Brain (BASB)方法论。其后端采用DeepSeek MCP（Model Context Protocol）原子服务架构为系统提供AI增强，而前端则使用 React 和 Vite 构建。为用户提供智能化的知识捕获、组织、提炼和表达能力。
 
 **当前版本**: 0.1.1 (开发中)
 

@@ -199,6 +199,175 @@
   - **Request Body**: Partial update with only the fields to be updated
     ```json
     {
+      "title": "Advanced Machine Learning",
+      "metadata": {
+        "importance": 9
+      }
+    }
+    ```
+- **Responses**:
+  - **200 OK**:
+    ```json
+    {
+      "success": true,
+      "code": 200,
+      "message": "Knowledge item updated successfully.",
+      "data": {
+        "id": "item123",
+        "title": "Advanced Machine Learning",
+        "content": "Machine learning is a subset of artificial intelligence...",
+        "contentType": "markdown",
+        "source": {},
+        "metadata": {
+          "tags": ["ML", "AI", "Introduction"],
+          "categories": ["Technology", "Education"],
+          "language": "en",
+          "readingTime": 15,
+          "importance": 9
+        },
+        "processing": {},
+        "relations": {},
+        "usage": {},
+        "securityLevel": "public",
+        "createdAt": "2023-05-10T09:00:00Z",
+        "updatedAt": "2023-06-17T12:00:00Z"
+      }
+    }
+    ```
+  - **400 Bad Request**: Invalid request body
+  - **404 Not Found**: User or item not found
+  - **500 Internal Server Error**: Server error
+
+### DELETE /api/v1/users/{userId}/knowledge-items/{itemId}
+- **Description**: Deletes a specific knowledge item
+- **Request**:
+  - **URL Parameters**:
+    - `userId` (string, required): The unique identifier of the user
+    - `itemId` (string, required): The unique identifier of the knowledge item
+- **Responses**:
+  - **204 No Content**:
+  - **404 Not Found**: User or item not found
+  - **500 Internal Server Error**: Server error
+
+### GET /api/v1/users/{userId}/knowledge-items/{itemId}/relations
+- **Description**: Retrieves the relations of a specific knowledge item
+- **Request**:
+  - **URL Parameters**:
+    - `userId` (string, required): The unique identifier of the user
+    - `itemId` (string, required): The unique identifier of the knowledge item
+- **Responses**:
+  - **200 OK**:
+    ```json
+    {
+      "success": true,
+      "code": 200,
+      "message": "Relations retrieved successfully.",
+      "data": {
+        "relatedItems": ["item456", "item789"],
+        "prerequisites": [],
+        "extensions": ["item234"]
+      }
+    }
+    ```
+  - **404 Not Found**: User or item not found
+  - **500 Internal Server Error**: Server error
+
+### POST /api/v1/users/{userId}/knowledge-items/{itemId}/relations
+- **Description**: Adds a relation to a specific knowledge item
+- **Request**:
+  - **URL Parameters**:
+    - `userId` (string, required): The unique identifier of the user
+    - `itemId` (string, required): The unique identifier of the knowledge item
+  - **Request Body**:
+    ```json
+    {
+      "relationType": "relatedItems",
+      "relatedItemId": "item999"
+    }
+    ```
+- **Responses**:
+  - **201 Created**:
+    ```json
+    {
+      "success": true,
+      "code": 201,
+      "message": "Relation added successfully.",
+      "data": {
+        "relatedItems": ["item456", "item789", "item999"],
+        "prerequisites": [],
+        "extensions": ["item234"]
+      }
+    }
+    ```
+  - **400 Bad Request**: Invalid request body
+  - **404 Not Found**: User or item not found
+  - **500 Internal Server Error**: Server error
+
+### DELETE /api/v1/users/{userId}/knowledge-items/{itemId}/relations
+- **Description**: Removes a relation from a specific knowledge item
+- **Request**:
+  - **URL Parameters**:
+    - `userId` (string, required): The unique identifier of the user
+    - `itemId` (string, required): The unique identifier of the knowledge item
+  - **Request Body**:
+    ```json
+    {
+      "relationType": "relatedItems",
+      "relatedItemId": "item999"
+    }
+    ```
+- **Responses**:
+  - **204 No Content**:
+  - **400 Bad Request**: Invalid request body
+  - **404 Not Found**: User or item not found
+  - **500 Internal Server Error**: Server error
+
+### POST /api/v1/users/{userId}/knowledge-items/{itemId}/tags
+- **Description**: Adds a tag to a specific knowledge item
+- **Request**:
+  - **URL Parameters**:
+    - `userId` (string, required): The unique identifier of the user
+    - `itemId` (string, required): The unique identifier of the knowledge item
+  - **Request Body**:
+    ```json
+    {
+      "tag": "NewTag"
+    }
+    ```
+- **Responses**:
+  - **201 Created**:
+    ```json
+    {
+      "success": true,
+      "code": 201,
+      "message": "Tag added successfully.",
+      "data": {
+        "tags": ["ML", "AI", "Introduction", "NewTag"]
+      }
+    }
+    ```
+  - **400 Bad Request**: Invalid request body or tag already exists
+  - **404 Not Found**: User or item not found
+  - **500 Internal Server Error**: Server error
+
+### DELETE /api/v1/users/{userId}/knowledge-items/{itemId}/tags
+- **Description**: Removes a tag from a specific knowledge item
+- **Request**:
+  - **URL Parameters**:
+    - `userId` (string, required): The unique identifier of the user
+    - `itemId` (string, required): The unique identifier of the knowledge item
+  - **Request Body**:
+    ```json
+    {
+      "tag": "NewTag"
+    }
+    ```
+- **Responses**:
+  - **204 No Content**:
+  - **400 Bad Request**: Invalid request body
+  - **404 Not Found**: User or item not found
+  - **500 Internal Server Error**: Server error
+    {
       "metadata": {
         "tags": ["ML", "AI", "Introduction", "Beginner"],
         "importance": 9

@@ -1,0 +1,197 @@
+openapi: 3.0.3
+info:
+  title: Knowledge Ingestion Service API
+  description: API for the MCP Atomic Service responsible for capturing knowledge from various sources.
+  version: 1.0.0
+  contact:
+    name: BASB System Architect
+    email: architect@basb.system
+
+servers:
+  - url: http://localhost:8081
+    description: Local development server for Knowledge Ingestion Service
+
+paths:
+  /api/capture/webpage:
+    post:
+      summary: Capture Webpage Content
+      description: Captures the main content from a given URL, processes it, and stores it as a new knowledge item.
+      tags:
+        - Capture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: The URL of the webpage to capture.
+                  example: "https://example.com/article"
+              required:
+                - url
+      responses:
+        '201':
+          description: Successfully created a knowledge item from the webpage.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/capture/note:
+    post:
+      summary: Capture Text Note
+      description: Captures a text note and stores it as a new knowledge item.
+      tags:
+        - Capture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: The title of the note.
+                  example: "My Note"
+                content:
+                  type: string
+                  description: The content of the note.
+                  example: "This is a quick note about API design."
+                format:
+                  type: string
+                  enum: ["markdown", "plaintext"]
+                  default: "markdown"
+                  description: The format of the note content.
+              required:
+                - title
+                - content
+      responses:
+        '201':
+          description: Successfully created a knowledge item from the note.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/capture/file:
+    post:
+      summary: Capture File
+      description: Uploads and captures a file, storing its content and metadata as a new knowledge item.
+      tags:
+        - Capture
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The file to be captured.
+      responses:
+        '201':
+          description: Successfully created a knowledge item from the file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    KnowledgeItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the knowledge item.
+          example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
+        title:
+          type: string
+          description: The title of the knowledge item.
+          example: "API Design Best Practices"
+        content_path:
+          type: string
+          description: Path to the stored content of the item.
+          example: "/data/content/d290f1ee.md"
+        source_url:
+          type: string
+          format: uri
+          description: The original source URL, if applicable.
+          example: "https://example.com/article"
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp when the item was created.
+        updated_at:
+          type: string
+          format: date-time
+          description: The timestamp when the item was last updated.
+
+    KnowledgeItemResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: true
+        data:
+          $ref: '#/components/schemas/KnowledgeItem'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "validation_error"
+            message:
+              type: string
+              example: "Invalid request parameters"
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    example: "url"
+                  message:
+                    type: string
+                    example: "URL is not valid"
+
+  responses:
+    BadRequest:
+      description: The server cannot or will not process the request due to something that is perceived to be a client error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: The server has encountered a situation it doesn't know how to handle.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

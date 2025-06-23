@@ -1,5 +1,7 @@
 console.log('[JEST_SETUP_TS] TOP_LEVEL_MARKER_A');
 
+import { Server } from 'http';
+import { bootstrap, shutdown } from './src/main'; // Assuming main.ts exports bootstrap and a new shutdown function
 import { ConfigManager, AppConfig } from './src/utils/config';
 import { Logger, initializeGlobalLogger, LogLevel, getGlobalLogger } from './src/utils/logger';
 
@@ -76,9 +78,24 @@ if (!configManagerInstance) {
 // though Jest's environment setup typically handles this implicitly or via setupFilesAfterEnv.
 export { configManagerInstance, appConfig };
 
+let server: Server;
+
+// beforeAll(async () => {
+//   setupLogger.info('[jest.setup] Starting server for contract tests...');
+//   server = await bootstrap();
+//   setupLogger.info('[jest.setup] Server started.');
+// });
+
 // Clean up resources after all tests if necessary
-afterAll(async () => {
-  setupLogger.info('[jest.setup] All tests completed. Performing cleanup...');
+// afterAll(async () => {
+//   setupLogger.info('[jest.setup] All tests completed. Performing cleanup...');
+  
+//   if (server) {
+//     setupLogger.info('[jest.setup] Shutting down server...');
+//     await shutdown(server);
+//   setupLogger.info('[jest.setup] Server shut down.');
+//   }
+// });
   
   const loggerToClose = getGlobalLogger();
   if (loggerToClose && typeof loggerToClose.close === 'function') {
@@ -101,6 +118,5 @@ afterAll(async () => {
   //   setupLogger.info('[jest.setup] ConfigManager disposed.');
   // }
   setupLogger.info('[jest.setup] Cleanup process completed.');
-});
 
 console.log('[jest.setup] Jest setup script finished.');

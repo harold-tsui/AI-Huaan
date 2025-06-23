@@ -1,0 +1,14 @@
+.processing-section {
+  margin-bottom: 1.5rem;
+}
+
+.processing-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.processing-section p {
+  font-size: 0.9rem;
+  color: #4a5568;
+}

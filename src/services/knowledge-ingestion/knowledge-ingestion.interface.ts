@@ -1,4 +1,4 @@
-import { KnowledgeItem, KnowledgeItemSource } from '../../shared/types/knowledge-item';
+import { KnowledgeItem, KnowledgeItemContentType, KnowledgeItemSource, PARACategory } from '../../shared/types/knowledge-item';
 
 export interface CaptureWebContentOptions {
   includeMetadata?: boolean; // Whether to include full original HTML in source.originalHtml
@@ -6,6 +6,13 @@ export interface CaptureWebContentOptions {
   tags?: string[]; // Initial tags to assign to the KnowledgeItem
   category?: string; // Initial category to assign to the KnowledgeItem
   customMetadata?: Record<string, any>; // Any other custom metadata to include
+}
+
+export interface NoteCaptureOptions {
+  tags?: string[];
+  category?: PARACategory;
+  customMetadata?: Record<string, any>;
+  contentType?: KnowledgeItemContentType;
 }
 
 export interface ParseDocumentOptions {
@@ -60,4 +67,13 @@ export interface IKnowledgeIngestionService {
    * @returns A Promise resolving to an array of KnowledgeItems.
    */
   syncExternalData(platform: string, credentials: any, options?: SyncExternalDataOptions): Promise<KnowledgeItem[]>;
+
+  /**
+   * Captures a note from plain text or markdown.
+   * @param title The title of the note.
+   * @param content The content of the note.
+   * @param options Options for note capture.
+   * @returns A Promise resolving to a KnowledgeItem.
+   */
+  captureNote(title: string, content: string, options?: NoteCaptureOptions): Promise<KnowledgeItem>;
 }

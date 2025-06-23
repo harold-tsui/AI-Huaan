@@ -31,6 +31,7 @@ export interface KnowledgeItem {
   id: string; // UUID
   title: string;
   content: string;
+  contentPath?: string; // Optional path to stored content
   contentType: KnowledgeItemContentType;
   source: KnowledgeItemSource;
   metadata: KnowledgeItemMetadata;

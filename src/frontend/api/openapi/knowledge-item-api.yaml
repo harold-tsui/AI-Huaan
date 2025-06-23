@@ -1,0 +1,817 @@
+openapi: 3.0.3
+info:
+  title: Knowledge Item API
+  description: |
+    Building a Second Brain (BASB) 系统的知识项 API，提供知识项的创建、查询、更新和删除功能。
+    
+    此 API 规范作为前端和后端开发的契约，确保 API 的一致性和可靠性。
+  version: 1.0.0
+  contact:
+    name: BASB API Team
+    email: api-team@basb-system.com
+
+servers:
+  - url: https://api.basb-system.com/api/v1
+    description: 生产环境
+  - url: https://dev-api.basb-system.com/api/v1
+    description: 开发环境
+  - url: https://staging-api.basb-system.com/api/v1
+    description: 测试环境
+
+tags:
+  - name: knowledge-items
+    description: 知识项管理
+
+paths:
+  /users/{userId}/knowledge-items:
+    get:
+      summary: 获取用户的知识项列表
+      description: 根据过滤条件获取用户的知识项列表，支持分页、排序和多种过滤条件
+      operationId: getKnowledgeItems
+      tags:
+        - knowledge-items
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/ContentTypeParam'
+        - $ref: '#/components/parameters/TagsParam'
+        - $ref: '#/components/parameters/CategoriesParam'
+        - $ref: '#/components/parameters/CreatedAtMinParam'
+        - $ref: '#/components/parameters/CreatedAtMaxParam'
+        - $ref: '#/components/parameters/ImportanceMinParam'
+        - $ref: '#/components/parameters/ImportanceMaxParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortDirectionParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 成功获取知识项列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeItemListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth: []
+    
+    post:
+      summary: 创建新的知识项
+      description: 为指定用户创建新的知识项
+      operationId: createKnowledgeItem
+      tags:
+        - knowledge-items
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKnowledgeItemRequest'
+      responses:
+        '201':
+          description: 知识项创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth: []
+  
+  /users/{userId}/knowledge-items/{itemId}:
+    get:
+      summary: 获取特定知识项
+      description: 获取指定用户的特定知识项
+      operationId: getKnowledgeItem
+      tags:
+        - knowledge-items
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/ItemIdParam'
+      responses:
+        '200':
+          description: 成功获取知识项
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth: []
+    
+    put:
+      summary: 更新知识项
+      description: 更新指定用户的特定知识项
+      operationId: updateKnowledgeItem
+      tags:
+        - knowledge-items
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/ItemIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateKnowledgeItemRequest'
+      responses:
+        '200':
+          description: 知识项更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth: []
+    
+    patch:
+      summary: 部分更新知识项
+      description: 部分更新指定用户的特定知识项
+      operationId: patchKnowledgeItem
+      tags:
+        - knowledge-items
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/ItemIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchKnowledgeItemRequest'
+      responses:
+        '200':
+          description: 知识项部分更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth: []
+    
+    delete:
+      summary: 删除知识项
+      description: 删除指定用户的特定知识项
+      operationId: deleteKnowledgeItem
+      tags:
+        - knowledge-items
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/ItemIdParam'
+      responses:
+        '200':
+          description: 知识项删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteKnowledgeItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth: []
+  
+  /users/{userId}/knowledge-items/search:
+    get:
+      summary: 搜索知识项
+      description: 根据查询条件搜索用户的知识项
+      operationId: searchKnowledgeItems
+      tags:
+        - knowledge-items
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - name: query
+          in: query
+          description: 搜索查询字符串
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/ContentTypeParam'
+        - $ref: '#/components/parameters/TagsParam'
+        - $ref: '#/components/parameters/CategoriesParam'
+        - $ref: '#/components/parameters/CreatedAtMinParam'
+        - $ref: '#/components/parameters/CreatedAtMaxParam'
+        - $ref: '#/components/parameters/ImportanceMinParam'
+        - $ref: '#/components/parameters/ImportanceMaxParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortDirectionParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 成功获取搜索结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeItemListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - BearerAuth: []
+
+components:
+  schemas:
+    KnowledgeItem:
+      type: object
+      required:
+        - id
+        - userId
+        - title
+        - content
+        - contentType
+        - source
+        - metadata
+        - securityLevel
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 知识项唯一标识符
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        userId:
+          type: string
+          description: 所属用户ID
+          example: "user-123"
+        title:
+          type: string
+          description: 知识项标题
+          example: "如何有效管理时间"
+        content:
+          type: string
+          description: 知识项内容
+          example: "时间管理是提高生产力的关键..."
+        contentType:
+          $ref: '#/components/schemas/ContentType'
+        source:
+          $ref: '#/components/schemas/Source'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        securityLevel:
+          $ref: '#/components/schemas/SecurityLevel'
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+          example: "2023-01-15T08:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: 最后更新时间
+          example: "2023-01-16T10:15:00Z"
+    
+    ContentType:
+      type: string
+      description: 内容类型
+      enum:
+        - TEXT
+        - MARKDOWN
+        - HTML
+        - CODE
+        - IMAGE
+        - AUDIO
+        - VIDEO
+        - PDF
+        - LINK
+      example: "MARKDOWN"
+    
+    SourceType:
+      type: string
+      description: 来源类型
+      enum:
+        - WEB
+        - BOOK
+        - ARTICLE
+        - PODCAST
+        - VIDEO
+        - MEETING
+        - CONVERSATION
+        - EMAIL
+        - SOCIAL_MEDIA
+        - COURSE
+        - PERSONAL
+        - OTHER
+      example: "WEB"
+    
+    SecurityLevel:
+      type: string
+      description: 安全级别
+      enum:
+        - PUBLIC
+        - PRIVATE
+        - CONFIDENTIAL
+        - RESTRICTED
+      example: "PRIVATE"
+    
+    Source:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/SourceType'
+        url:
+          type: string
+          format: uri
+          description: 来源URL
+          example: "https://example.com/article"
+        author:
+          type: string
+          description: 作者
+          example: "John Doe"
+    
+    Metadata:
+      type: object
+      required:
+        - tags
+        - categories
+        - language
+        - importance
+      properties:
+        tags:
+          type: array
+          description: 标签列表
+          items:
+            type: string
+          example: ["时间管理", "生产力"]
+        categories:
+          type: array
+          description: 分类列表
+          items:
+            type: string
+          example: ["个人发展", "效率"]
+        language:
+          type: string
+          description: 内容语言
+          example: "zh-CN"
+        readingTime:
+          type: integer
+          description: 阅读时间（分钟）
+          minimum: 0
+          example: 5
+        importance:
+          type: integer
+          description: 重要性（1-5）
+          minimum: 1
+          maximum: 5
+          example: 4
+    
+    CreateKnowledgeItemRequest:
+      type: object
+      required:
+        - title
+        - content
+        - contentType
+        - source
+        - metadata
+        - securityLevel
+      properties:
+        title:
+          type: string
+          description: 知识项标题
+          example: "如何有效管理时间"
+        content:
+          type: string
+          description: 知识项内容
+          example: "时间管理是提高生产力的关键..."
+        contentType:
+          $ref: '#/components/schemas/ContentType'
+        source:
+          $ref: '#/components/schemas/Source'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        securityLevel:
+          $ref: '#/components/schemas/SecurityLevel'
+    
+    UpdateKnowledgeItemRequest:
+      type: object
+      required:
+        - title
+        - content
+        - contentType
+        - source
+        - metadata
+        - securityLevel
+      properties:
+        title:
+          type: string
+          description: 知识项标题
+          example: "更新后的标题：如何有效管理时间"
+        content:
+          type: string
+          description: 知识项内容
+          example: "更新后的内容：时间管理是提高生产力的关键..."
+        contentType:
+          $ref: '#/components/schemas/ContentType'
+        source:
+          $ref: '#/components/schemas/Source'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        securityLevel:
+          $ref: '#/components/schemas/SecurityLevel'
+    
+    PatchKnowledgeItemRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 知识项标题
+          example: "部分更新的标题"
+        content:
+          type: string
+          description: 知识项内容
+          example: "部分更新的内容"
+        contentType:
+          $ref: '#/components/schemas/ContentType'
+        source:
+          $ref: '#/components/schemas/Source'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        securityLevel:
+          $ref: '#/components/schemas/SecurityLevel'
+    
+    KnowledgeItemResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          description: 操作是否成功
+          example: true
+        data:
+          $ref: '#/components/schemas/KnowledgeItem'
+        error:
+          $ref: '#/components/schemas/ApiError'
+        meta:
+          type: object
+          description: 元数据信息
+          additionalProperties: true
+    
+    KnowledgeItemListResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          description: 操作是否成功
+          example: true
+        data:
+          type: object
+          required:
+            - items
+            - total
+            - limit
+            - offset
+          properties:
+            items:
+              type: array
+              description: 知识项列表
+              items:
+                $ref: '#/components/schemas/KnowledgeItem'
+            total:
+              type: integer
+              description: 总记录数
+              example: 42
+            limit:
+              type: integer
+              description: 每页记录数
+              example: 10
+            offset:
+              type: integer
+              description: 偏移量
+              example: 0
+        error:
+          $ref: '#/components/schemas/ApiError'
+        meta:
+          type: object
+          description: 元数据信息
+          additionalProperties: true
+    
+    DeleteKnowledgeItemResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          description: 操作是否成功
+          example: true
+        data:
+          type: object
+          required:
+            - success
+          properties:
+            success:
+              type: boolean
+              description: 删除是否成功
+              example: true
+        error:
+          $ref: '#/components/schemas/ApiError'
+        meta:
+          type: object
+          description: 元数据信息
+          additionalProperties: true
+    
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: 错误代码
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: 错误消息
+          example: "输入数据验证失败"
+        details:
+          type: object
+          description: 错误详情
+          additionalProperties: true
+  
+  parameters:
+    UserIdParam:
+      name: userId
+      in: path
+      description: 用户ID
+      required: true
+      schema:
+        type: string
+    
+    ItemIdParam:
+      name: itemId
+      in: path
+      description: 知识项ID
+      required: true
+      schema:
+        type: string
+        format: uuid
+    
+    ContentTypeParam:
+      name: contentType
+      in: query
+      description: 内容类型过滤
+      required: false
+      schema:
+        $ref: '#/components/schemas/ContentType'
+    
+    TagsParam:
+      name: tags
+      in: query
+      description: 标签过滤（多个标签用逗号分隔）
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: false
+    
+    CategoriesParam:
+      name: categories
+      in: query
+      description: 分类过滤（多个分类用逗号分隔）
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: false
+    
+    CreatedAtMinParam:
+      name: createdAtMin
+      in: query
+      description: 创建时间最小值
+      required: false
+      schema:
+        type: string
+        format: date-time
+    
+    CreatedAtMaxParam:
+      name: createdAtMax
+      in: query
+      description: 创建时间最大值
+      required: false
+      schema:
+        type: string
+        format: date-time
+    
+    ImportanceMinParam:
+      name: importanceMin
+      in: query
+      description: 重要性最小值
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 5
+    
+    ImportanceMaxParam:
+      name: importanceMax
+      in: query
+      description: 重要性最大值
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 5
+    
+    SortByParam:
+      name: sortBy
+      in: query
+      description: 排序字段
+      required: false
+      schema:
+        type: string
+        enum:
+          - CREATED_AT
+          - UPDATED_AT
+          - TITLE
+          - IMPORTANCE
+        default: CREATED_AT
+    
+    SortDirectionParam:
+      name: sortDirection
+      in: query
+      description: 排序方向
+      required: false
+      schema:
+        type: string
+        enum:
+          - ASC
+          - DESC
+        default: DESC
+    
+    LimitParam:
+      name: limit
+      in: query
+      description: 每页记录数
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    
+    OffsetParam:
+      name: offset
+      in: query
+      description: 偏移量
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+  
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - success
+              - error
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/ApiError'
+    
+    Unauthorized:
+      description: 未授权
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - success
+              - error
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/ApiError'
+    
+    Forbidden:
+      description: 禁止访问
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - success
+              - error
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/ApiError'
+    
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - success
+              - error
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/ApiError'
+    
+    InternalServerError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - success
+              - error
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/ApiError'
+  
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

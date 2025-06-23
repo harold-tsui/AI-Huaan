@@ -7,20 +7,20 @@ const configManagementService = new ConfigManagementService();
 router.get('/core-platform', async (req: Request, res: Response) => {
   try {
     const config = await configManagementService.getCorePlatformConfig();
-    res.status(200).json(config);
+    res.status(200).json({ success: true, code: 200, message: '核心平台配置获取成功', data: config });
   } catch (error) {
     console.error('[ConfigManagementController] Error fetching core platform config:', error);
-    res.status(500).json({ message: 'Failed to fetch core platform config' });
+    res.status(500).json({ success: false, code: 500, message: '获取核心平台配置失败', error: { type: 'InternalServerError', message: (error as Error).message } });
   }
 });
 
 router.post('/core-platform', async (req: Request, res: Response) => {
   try {
     const result = await configManagementService.saveCorePlatformConfig(req.body);
-    res.status(200).json(result);
+    res.status(200).json({ success: true, code: 200, message: '核心平台配置保存成功', data: result });
   } catch (error) {
     console.error('[ConfigManagementController] Error saving core platform config:', error);
-    res.status(500).json({ message: 'Failed to save core platform config' });
+    res.status(500).json({ success: false, code: 500, message: '保存核心平台配置失败', error: { type: 'InternalServerError', message: (error as Error).message } });
   }
 });
 
@@ -28,20 +28,20 @@ router.post('/core-platform', async (req: Request, res: Response) => {
 router.get('/para-organization', async (req: Request, res: Response) => {
   try {
     const config = await configManagementService.getPARAOrganizationConfig();
-    res.status(200).json(config);
+    res.status(200).json({ success: true, code: 200, message: 'PARA组织配置获取成功', data: config });
   } catch (error) {
     console.error('[ConfigManagementController] Error fetching PARA organization config:', error);
-    res.status(500).json({ message: 'Failed to fetch PARA organization config' });
+    res.status(500).json({ success: false, code: 500, message: '获取PARA组织配置失败', error: { type: 'InternalServerError', message: (error as Error).message } });
   }
 });
 
 router.post('/para-organization', async (req: Request, res: Response) => {
   try {
     const result = await configManagementService.savePARAOrganizationConfig(req.body);
-    res.status(200).json(result);
+    res.status(200).json({ success: true, code: 200, message: 'PARA组织配置保存成功', data: result });
   } catch (error) {
     console.error('[ConfigManagementController] Error saving PARA organization config:', error);
-    res.status(500).json({ message: 'Failed to save PARA organization config' });
+    res.status(500).json({ success: false, code: 500, message: '保存PARA组织配置失败', error: { type: 'InternalServerError', message: (error as Error).message } });
   }
 });
 
@@ -49,10 +49,10 @@ router.post('/para-organization', async (req: Request, res: Response) => {
 router.get('/all', async (req: Request, res: Response) => {
   try {
     const configs = await configManagementService.getAllConfigs();
-    res.status(200).json(configs);
+    res.status(200).json({ success: true, code: 200, message: '所有配置获取成功', data: configs });
   } catch (error) {
     console.error('[ConfigManagementController] Error fetching all configs:', error);
-    res.status(500).json({ message: 'Failed to fetch all configs' });
+    res.status(500).json({ success: false, code: 500, message: '获取所有配置失败', error: { type: 'InternalServerError', message: (error as Error).message } });
   }
 });
 

@@ -15,10 +15,10 @@ const configService = new ConfigManagementService();
 router.get('/config', async (req: Request, res: Response) => {
   try {
     const config = await configService.getPARAOrganizationConfig();
-    res.status(200).json(config);
+    res.status(200).json({ success: true, code: 200, message: '配置获取成功', data: config });
   } catch (error) {
     logger.error('Error fetching PARA organization config:', error);
-    res.status(500).json({ message: 'Failed to fetch PARA organization config' });
+    res.status(500).json({ success: false, code: 500, message: '获取配置失败', error: { type: 'InternalServerError', message: (error as Error).message } });
   }
 });
 
@@ -40,10 +40,10 @@ router.post('/config', async (req: Request, res: Response) => {
       logger.warn('Failed to update scheduler config, but configuration was saved:', schedulerError);
     }
     
-    res.status(200).json(result);
+    res.status(200).json({ success: true, code: 200, message: '配置保存成功', data: result });
   } catch (error) {
     logger.error('Error saving PARA organization config:', error);
-    res.status(500).json({ message: 'Failed to save PARA organization config' });
+    res.status(500).json({ success: false, code: 500, message: '保存配置失败', error: { type: 'InternalServerError', message: (error as Error).message } });
   }
 });
 
@@ -54,15 +54,15 @@ router.post('/execute', async (req: Request, res: Response) => {
   try {
     const schedulerManagerService = globalServiceRegistry.getService('OrganizationSchedulerManager') as any;
     if (!schedulerManagerService) {
-      return res.status(503).json({ message: 'Scheduler manager not available' });
+      return res.status(503).json({ success: false, code: 503, message: '调度器服务不可用', error: { type: 'ServiceUnavailable', message: 'Scheduler manager not available' } });
     }
 
     const schedulerManager = schedulerManagerService.getSchedulerManager();
     await schedulerManager.executeOnce();
-    res.status(200).json({ message: 'PARA organization executed successfully' });
+    res.status(200).json({ success: true, code: 200, message: 'PARA 组织化执行成功' });
   } catch (error) {
     logger.error('Error executing PARA organization:', error);
-    res.status(500).json({ message: 'Failed to execute PARA organization' });
+    res.status(500).json({ success: false, code: 500, message: '执行 PARA 组织化失败', error: { type: 'InternalServerError', message: (error as Error).message } });
   }
 });
 
@@ -73,15 +73,15 @@ router.get('/status', async (req: Request, res: Response) => {
   try {
     const schedulerManagerService = globalServiceRegistry.getService('OrganizationSchedulerManager') as any;
     if (!schedulerManagerService) {
-      return res.status(503).json({ message: 'Scheduler manager not available' });
+      return res.status(503).json({ success: false, code: 503, message: '调度器服务不可用', error: { type: 'ServiceUnavailable', message: 'Scheduler manager not available' } });
     }
 
     const schedulerManager = schedulerManagerService.getSchedulerManager();
     const status = await schedulerManager.getStatus();
-    res.status(200).json(status);
+    res.status(200).json({ success: true, code: 200, message: '获取状态成功', data: status });
   } catch (error) {
     logger.error('Error getting scheduler status:', error);
-    res.status(500).json({ message: 'Failed to get scheduler status' });
+    res.status(500).json({ success: false, code: 500, message: '获取状态失败', error: { type: 'InternalServerError', message: (error as Error).message } });
   }
 });
 
@@ -110,10 +110,10 @@ router.get('/history', async (req: Request, res: Response) => {
       }
     ];
     
-    res.status(200).json(mockHistory);
+    res.status(200).json({ success: true, code: 200, message: '获取历史记录成功', data: mockHistory });
   } catch (error) {
     logger.error('Error fetching organization history:', error);
-    res.status(500).json({ message: 'Failed to fetch organization history' });
+    res.status(500).json({ success: false, code: 500, message: '获取历史记录失败', error: { type: 'InternalServerError', message: (error as Error).message } });
   }
 });
 

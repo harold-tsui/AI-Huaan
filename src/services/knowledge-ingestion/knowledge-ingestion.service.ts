@@ -3,6 +3,7 @@
 import { 
     IKnowledgeIngestionService, 
     CaptureWebContentOptions, 
+    NoteCaptureOptions,
     ParseDocumentOptions, 
     ProcessMediaOptions, 
     SyncExternalDataOptions 
@@ -18,9 +19,10 @@ import { CaptureItem, CaptureItemStatus, CaptureItemPriority, CaptureSourceType,
 import { IKnowledgeGraphService } from '../../shared/knowledge-graph-services';
 import { IAIService } from '../../shared/ai-services';
 import { globalServiceFactory } from '../../shared/mcp-core/service-factory';
+import { IMCPService } from '../../shared/mcp-core/types';
 
 
-export class KnowledgeIngestionService extends MCPService implements IKnowledgeIngestionService {
+export class KnowledgeIngestionService extends MCPService implements IKnowledgeIngestionService, IMCPService {
   name = 'knowledge-ingestion';
   version = '1.0.0';
   
@@ -164,6 +166,38 @@ export class KnowledgeIngestionService extends MCPService implements IKnowledgeI
     // --- End Placeholder --- 
   }
 
+  async captureNote(title: string, content: string, options?: NoteCaptureOptions): Promise<KnowledgeItem> {
+    this.logger.info(`Attempting to capture note: "${title}"`, options);
+
+    const newItem: KnowledgeItem = {
+      id: uuidv4(),
+      title,
+      content,
+      contentType: options?.contentType || 'markdown',
+      source: {
+        platform: 'note',
+        timestamp: new Date().toISOString(),
+      } as KnowledgeItemSource,
+      metadata: {
+        tags: options?.tags || [],
+        category: (options?.category || 'Notes') as PARACategory,
+        custom: options?.customMetadata || {},
+      } as KnowledgeItemMetadata,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const storageResult = await this.storageService.storeDocument(newItem);
+    if (storageResult.status === 'success') {
+      newItem.contentPath = storageResult.storagePath;
+      this.logger.info(`Note "${title}" stored successfully. Storage Path: ${storageResult.storagePath}, Item ID: ${newItem.id}`);
+      return newItem;
+    } else {
+      this.logger.error(`Failed to store note "${title}": ${storageResult.error}`, { itemId: newItem.id });
+      throw new Error(`Failed to store note "${title}": ${storageResult.error}`);
+    }
+  }
+
   async processMedia(filePath: string, type: string, options?: ProcessMediaOptions): Promise<KnowledgeItem> {
     console.log('Attempting to process media:', filePath, type, options);
     // 1. Load media file
@@ -242,6 +276,39 @@ export class KnowledgeIngestionService extends MCPService implements IKnowledgeI
     return []; 
     // --- End Placeholder --- 
   }
+
+  // IMCPService implementation
+  async initialize(): Promise<boolean> {
+    return true;
+  }
+
+  async shutdown(): Promise<boolean> {
+    return true;
+  }
+
+  async healthCheck(): Promise<boolean> {
+    return true;
+  }
+
+  async handleRequest(request: any): Promise<any> {
+    // Not used in this service
+    return {};
+  }
+
+  getStatus(): any {
+    // Assuming getStatus from MCPService is sufficient, returning empty object as placeholder if override is needed.
+    return super.getStatus();
+  }
+
+  getMetadata(): any {
+    return {};
+  }
+
+  getConfig(): any {
+    return {};
+  }
+
+  updateConfig(config: any): void {}
 
   getInfo() {
     return {

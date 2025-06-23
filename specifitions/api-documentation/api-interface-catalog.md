@@ -35,7 +35,7 @@ The BASB system APIs are organized into the following categories:
   - `userContext(userId: ID!): UserContext` - Get user context
   - `updateUserContext(input: UpdateUserContextInput!): UpdateUserContextPayload!` - Update user context
 
-### Knowledge Item Management
+### Knowledge Management
 
 | API Name | Description | Version | Status | Documentation |
 |----------|-------------|---------|--------|---------------|
@@ -89,7 +89,15 @@ The BASB system APIs are organized into the following categories:
 
 | API Name | Description | Version | Status | Documentation |
 |----------|-------------|---------|--------|---------------|
-| Tags Management API | Manages tags and their associations with knowledge items | v1 | Active | [Tags Management API Documentation](./tags-management-api.md) |
+| Tags Management API | Manages tags and their associations with knowledge items | v1 | Active | [Tags Management API Documentation](./backend/tags-management-api.md) |
+
+### Platform Services
+
+| API Name | Description | Version | Status | Documentation |
+|----------|-------------|---------|--------|---------------|
+| User Context API | Manages user contexts, preferences, and settings | v1 | Active | [User Context API Documentation](./user-context-api.md) |
+| Organization Config API | Manages the configuration and execution of PARA organization | v1 | Active | [Organization Config API Documentation](./backend/organization-config-api.md) |
+| Config Management API | Manages various configurations for the BASB system | v1 | Active | [Config Management API Documentation](./backend/config-management-api.md) |
 
 #### Key Endpoints/Operations
 
@@ -176,7 +184,8 @@ For information on the API change management process, including how to request c
 
 ## API Design Guidelines
 
-For information on API design guidelines, including best practices, standards, and conventions for both RESTful and GraphQL APIs, please refer to the [API Design Guidelines](./api-design-guidelines.md).
+- [API Design Guidelines](./api-design-guidelines.md)
+- [API Response Format Standard](./api-response-standard.md)
 
 ## Version History
 

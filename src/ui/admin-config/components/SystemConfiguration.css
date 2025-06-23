@@ -1,0 +1,14 @@
+.config-section {
+  margin-bottom: 1.5rem;
+}
+
+.config-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.config-section p {
+  font-size: 0.9rem;
+  color: #4a5568;
+}
