@@ -3,8 +3,7 @@
 import { globalServiceFactory } from '../../shared/mcp-core/service-factory';
 import { KnowledgeIngestionService } from './knowledge-ingestion.service';
 import { Logger } from '../../utils/logger';
-
-const KNOWLEDGE_INGESTION_SERVICE_ID = 'knowledge-ingestion-service';
+import { KNOWLEDGE_INGESTION_SERVICE_ID } from './constants';
 
 export function registerKnowledgeIngestionService(): void {
   const logger = new Logger('KnowledgeIngestionRegister');
@@ -12,7 +11,7 @@ export function registerKnowledgeIngestionService(): void {
     globalServiceFactory.registerServiceConstructor(
       KNOWLEDGE_INGESTION_SERVICE_ID,
       (orgService, storageService, kgService) => new KnowledgeIngestionService(orgService, storageService, kgService, null),
-      ['OrganizationService', 'ObsidianService', 'KnowledgeGraphService']
+      'organization-service', 'obsidian-storage-service', 'KnowledgeGraphService'
     );
 
     // Service alias registration removed as method doesn't exist

@@ -12,7 +12,6 @@ export interface NoteCaptureOptions {
   tags?: string[];
   category?: PARACategory;
   customMetadata?: Record<string, any>;
-  contentType?: KnowledgeItemContentType;
 }
 
 export interface ParseDocumentOptions {
@@ -75,5 +74,5 @@ export interface IKnowledgeIngestionService {
    * @param options Options for note capture.
    * @returns A Promise resolving to a KnowledgeItem.
    */
-  captureNote(title: string, content: string, options?: NoteCaptureOptions): Promise<KnowledgeItem>;
+  captureNote(title: string, content: string, format: 'markdown' | 'plaintext', options?: NoteCaptureOptions): Promise<KnowledgeItem>;
 }

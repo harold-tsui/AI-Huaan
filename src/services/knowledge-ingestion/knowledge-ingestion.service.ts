@@ -166,14 +166,14 @@ export class KnowledgeIngestionService extends MCPService implements IKnowledgeI
     // --- End Placeholder --- 
   }
 
-  async captureNote(title: string, content: string, options?: NoteCaptureOptions): Promise<KnowledgeItem> {
-    this.logger.info(`Attempting to capture note: "${title}"`, options);
+  async captureNote(title: string, content: string, format: 'markdown' | 'plaintext' = 'markdown', options?: Omit<NoteCaptureOptions, 'contentType'>): Promise<KnowledgeItem> {
+    this.logger.info(`Attempting to capture note: "${title}"`, { format, ...options });
 
     const newItem: KnowledgeItem = {
       id: uuidv4(),
       title,
       content,
-      contentType: options?.contentType || 'markdown',
+      contentType: format === 'plaintext' ? 'text' : format,
       source: {
         platform: 'note',
         timestamp: new Date().toISOString(),

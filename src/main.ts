@@ -6,6 +6,7 @@ import { setupRoutes } from './routes';
 import { registerAllServices } from './services/register-services';
 import { initializeGlobalLogger, getGlobalLogger, LogLevel } from './utils/logger';
 import { config } from './utils/config';
+import { globalServiceFactory } from './shared/mcp-core/service-factory';
 
 export let server: Server | null = null;
 
@@ -22,6 +23,32 @@ export let server: Server | null = null;
     // Register all MCP services
     await registerAllServices();
     logger.info('All MCP services have been registered.');
+    
+    // Create and initialize all registered services
+     try {
+       const serviceConfigs = [
+         // First create services without dependencies
+         { name: 'KnowledgeGraphService' },
+         { 
+           name: 'obsidian-storage-service',
+           config: {
+             obsidianApiUrl: process.env.OBSIDIAN_API_URL,
+             obsidianApiKey: process.env.OBSIDIAN_API_KEY,
+             defaultVaultName: process.env.OBSIDIAN_VAULT_NAME
+           }
+         },
+         // Then create services that depend on others
+         { name: 'organization-service' },
+         { name: 'PresentationService' },
+         { name: 'knowledge-ingestion' }
+       ];
+      
+      await globalServiceFactory.createAndInitializeServices(serviceConfigs);
+      logger.info('All MCP services have been created and initialized.');
+    } catch (error) {
+      logger.error('Failed to create and initialize services:', error);
+      throw error;
+    }
 
     const app = express();
     const port = Number(process.env.PORT) || 8081;
@@ -35,10 +62,15 @@ export let server: Server | null = null;
     setupRoutes(app);
 
     // Start server
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       server = app.listen(port, '0.0.0.0', () => {
         logger.info(`Server is listening on http://0.0.0.0:${port}`);
         resolve(server as Server);
+      });
+
+      server.on('error', (err) => {
+        logger.error('Server failed to start:', err);
+        reject(err);
       });
     });
   }
@@ -50,8 +82,14 @@ export let server: Server | null = null;
     });
   }
 
-  export async function shutdown(serverInstance: Server): Promise<void> {
+  export async function shutdown(serverInstance?: Server): Promise<void> {
     return new Promise((resolve) => {
+      if (!serverInstance) {
+        logger.warn('No server instance provided for shutdown.');
+        resolve();
+        return;
+      }
+      
       serverInstance.close(() => {
         logger.info('Server has been shut down.');
         resolve();

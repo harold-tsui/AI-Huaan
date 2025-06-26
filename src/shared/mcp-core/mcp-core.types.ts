@@ -19,12 +19,24 @@ import { getGlobalLogger } from '../../utils/logger'; // Assuming logger is in u
 
 export class MCPService implements IMCPService {
   protected serviceId: string;
-  private eventHandlers: Map<string, (message: MCPMessage) => Promise<MCPResponse>> = new Map();
+  protected eventHandlers: Map<string, (message: MCPMessage) => Promise<MCPResponse>> = new Map();
   protected logger: Logger;
 
   constructor(serviceId: string) {
     this.serviceId = serviceId;
-    this.logger = getGlobalLogger(); // Initialize logger
+    try {
+      this.logger = getGlobalLogger(); // Initialize logger
+    } catch (error) {
+      console.error('Failed to initialize logger in MCPService:', error);
+      // Create a fallback logger to prevent service failure
+      this.logger = {
+        info: console.log,
+        warn: console.warn,
+        error: console.error,
+        debug: console.log,
+        verbose: console.log
+      } as any;
+    }
   }
 
   protected on(messageType: string, handler: (message: MCPMessage) => Promise<MCPResponse>): void {

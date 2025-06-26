@@ -59,14 +59,18 @@ export class MCPServiceRegistry implements IMCPServiceRegistry {
    * @returns 服务实例或null
    */
   public getService(serviceName: string, version?: string): IMCPService | null {
+    this.logger.info(`getService called with serviceName: ${serviceName}, version: ${version}`);
     // 如果指定了版本，查找精确匹配
     if (version) {
       for (const service of this.services.values()) {
         const info = service.getInfo();
+        this.logger.info(`Checking service: ${info.name}, version: ${info.version}, status: ${info.status}`);
         if (info.name === serviceName && info.version === version && info.status === ServiceStatus.ACTIVE) {
+          this.logger.info(`Found exact match for ${serviceName}@${version}`);
           return service;
         }
       }
+      this.logger.info(`No exact match found for ${serviceName}@${version}`);
       return null;
     }
     
@@ -76,14 +80,19 @@ export class MCPServiceRegistry implements IMCPServiceRegistry {
     
     for (const service of this.services.values()) {
       const info = service.getInfo();
-      if (info.name === serviceName && info.status === ServiceStatus.ACTIVE) {
+      this.logger.info(`Checking service for latest: ${info.name}, version: ${info.version}, status: ${info.status}`);
+      this.logger.info(`Name match: ${info.name === serviceName}, Status match: ${info.status === ServiceStatus.ACTIVE}`);
+      if (info.name === serviceName && (info.status === ServiceStatus.ACTIVE || info.status === ServiceStatus.INITIALIZED || info.status === ServiceStatus.INITIALIZING)) {
+        this.logger.info(`Service ${info.name} matches criteria`);
         if (!latestService || this.compareVersions(info.version, latestVersion) > 0) {
           latestService = service;
           latestVersion = info.version;
+          this.logger.info(`Updated latest service to ${info.name}@${info.version}`);
         }
       }
     }
     
+    this.logger.info(`Returning latest service: ${latestService ? latestService.getInfo().name : 'null'}`);
     return latestService;
   }
 

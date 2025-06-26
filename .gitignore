@@ -72,3 +72,28 @@ status_response.txt
 response.txt
 tsc-errors.txt
 tsc-current-errors.txt
+
+# 过程文件和调试文件
+debug-*.js
+debug-*.js.map
+debug-*.ts
+check-*.js
+test-*.js
+simple-test.js
+test-module.js
+test-output.js
+test-results.json
+types.json
+
+# 数据和缓存目录
+/data
+/cache
+
+# 构建和编译产物
+*.map
+*.d.ts.map
+
+# 开发和测试相关
+/examples
+/test-results/
+*.test.json

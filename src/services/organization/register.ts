@@ -16,43 +16,26 @@ import { MCPService, MCPMessage } from '../../shared/mcp-core/mcp-core.types';
 const logger = new Logger('OrganizationServiceRegistration');
 
 // 全局调度管理器实例
-let schedulerManager: OrganizationSchedulerManager | null = null;
-let organizationServiceInstance: OrganizationService | null = null;
 
-export async function registerOrganizationService(): Promise<void> {
-  // Manually instantiate dependencies first
-  // In a more complex DI system, these would be resolved by the container
-  const storageServiceInstance = new LocalStorageService({ rootDir: '/Users/haroldtsui/ObsidianWorkspace' });
-  // We can register storageServiceInstance to the factory if it's meant to be a shared instance,
-  // but for now, OrganizationService just needs an instance.
-  // globalServiceFactory.registerServiceConstructor('LocalStorageServiceForOrg', () => storageServiceInstance); // Example if needed
 
-  const llmServiceInstance = new MockLLMService();
-  // Similarly, register if it's a shared instance.
-  // globalServiceFactory.registerServiceConstructor('MockLLMServiceForOrg', () => llmServiceInstance);
-  
-  const configServiceInstance = new ConfigManagementService();
-  
-  // 预先创建 OrganizationService 实例
-  organizationServiceInstance = new OrganizationService('organization-service', storageServiceInstance as any as IStorageService, llmServiceInstance as ILLMService);
-  
-  // 预先创建调度管理器实例
-  schedulerManager = new OrganizationSchedulerManager(
-    organizationServiceInstance,
-    storageServiceInstance as any as IStorageService,
-    configServiceInstance
-  );
-
+export function registerOrganizationService(): void {
   // Adapter class for OrganizationService to match the factory's expected constructor signature
   const AdapterOrganizationService = class implements IMCPService {
     private orgService: OrganizationService;
-    
-    constructor(config?: ServiceConfig) {
-      // 使用预先创建的实例
-      if (!organizationServiceInstance) {
-        throw new Error('OrganizationService instance not available');
+    private schedulerManager: OrganizationSchedulerManager;
+
+    constructor(storageService: IStorageService, config?: ServiceConfig) {
+      if (!storageService) {
+        throw new Error('Failed to resolve dependencies for OrganizationService');
       }
-      this.orgService = organizationServiceInstance;
+
+      // Create mock services for dependencies that are not registered
+      const llmService = new MockLLMService();
+      const configService = new ConfigManagementService();
+
+      this.orgService = new OrganizationService('organization-service', storageService, llmService);
+      this.schedulerManager = new OrganizationSchedulerManager(this.orgService, storageService, configService);
+
       logger.info(`AdapterOrganizationService instantiated with serviceId: ${this.orgService.getInfo().id}`, config);
     }
 
@@ -118,15 +101,10 @@ export async function registerOrganizationService(): Promise<void> {
     // and they are not automatically handled by the base MCPService class (if OrganizationService extends it)
     async initialize(): Promise<boolean> {
       try {
-        // Add any specific initialization logic for OrganizationService if needed
         logger.info(`OrganizationService (${this.orgService.getInfo().id}) initialized.`);
-        
-        if (schedulerManager) {
-          await schedulerManager.initialize();
-          logger.info('OrganizationSchedulerManager initialized successfully.');
-        }
-        
-        // If OrganizationService extends a base MCPService that has initialize, call super.initialize()
+        await this.schedulerManager.initialize();
+        logger.info('OrganizationSchedulerManager initialized successfully.');
+
         if (typeof this.orgService.initialize === 'function') {
           return await this.orgService.initialize();
         }
@@ -139,16 +117,10 @@ export async function registerOrganizationService(): Promise<void> {
 
     async shutdown(): Promise<boolean> {
       try {
-        // Add any specific shutdown logic for OrganizationService if needed
         logger.info(`OrganizationService (${this.orgService.getInfo().id}) shutting down.`);
-        
-        // 销毁调度管理器
-        if (schedulerManager) {
-          schedulerManager.destroy();
-          schedulerManager = null;
-          logger.info('OrganizationSchedulerManager destroyed.');
-        }
-        
+        this.schedulerManager.destroy();
+        logger.info('OrganizationSchedulerManager destroyed.');
+
         if (typeof this.orgService.shutdown === 'function') {
           return await this.orgService.shutdown();
         }
@@ -160,63 +132,15 @@ export async function registerOrganizationService(): Promise<void> {
     }
   };
 
-  // 创建一个包装类来使 OrganizationSchedulerManager 符合 IMCPService 接口
-  class OrganizationSchedulerManagerService extends MCPService {
-    private schedulerManager: OrganizationSchedulerManager;
-
-    constructor(schedulerManager: OrganizationSchedulerManager) {
-      super('OrganizationSchedulerManager');
-      this.schedulerManager = schedulerManager;
-    }
-
-    async initialize(): Promise<boolean> {
-      // 设置服务状态为活跃
-      (this as any).status = ServiceStatus.ACTIVE;
-      return true; // 调度管理器已经在 OrganizationService 中初始化
-    }
-
-    async shutdown(): Promise<boolean> {
-      return true; // 调度管理器将在 OrganizationService 中销毁
-    }
-
-    async handleMessage(message: MCPMessage): Promise<MCPResponse> {
-      throw new Error('OrganizationSchedulerManagerService does not handle MCP messages directly');
-    }
-
-    getSchedulerManager(): OrganizationSchedulerManager {
-      return this.schedulerManager;
-    }
-  }
-
-  // 注册调度管理器服务构造函数
   globalServiceFactory.registerServiceConstructor(
-    'OrganizationSchedulerManager',
-    () => {
-      if (!schedulerManager) {
-        throw new Error('Scheduler manager not available.');
-      }
-      return new OrganizationSchedulerManagerService(schedulerManager);
-    }
+    'organization-service', 
+    AdapterOrganizationService, 
+    'obsidian-storage-service'
   );
-  
-  // 立即创建并注册调度管理器服务实例
-  try {
-    const schedulerManagerService = new OrganizationSchedulerManagerService(schedulerManager);
-    await schedulerManagerService.initialize(); // 初始化服务以设置正确的状态
-    globalServiceRegistry.registerService(schedulerManagerService);
-    logger.info('OrganizationSchedulerManager service instance created, initialized and registered.');
-  } catch (error) {
-    logger.error('Failed to create OrganizationSchedulerManager service instance:', error);
-  }
-
-  globalServiceFactory.registerServiceConstructor(
-    'OrganizationService', // This is the name used to retrieve/create the service via factory
-    AdapterOrganizationService as new (config?: ServiceConfig) => IMCPService
-  );
-
   logger.info('Registered OrganizationService constructor to global service factory.');
+  
+  // The factory will now handle dependency injection when creating the service instance.
+  // We no longer need to resolve dependencies manually inside the constructor.
+  // Let's adjust the AdapterOrganizationService constructor.
 
-  // Note: Service instance will be created and initialized when first requested
-  // This avoids duplicate initialization during registration phase
-  logger.info('OrganizationService registration completed. Instance will be created on demand.');
 }

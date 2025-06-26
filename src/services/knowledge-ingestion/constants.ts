@@ -1,1 +1,1 @@
-export const KNOWLEDGE_INGESTION_SERVICE_ID = 'KnowledgeIngestionService';
+export const KNOWLEDGE_INGESTION_SERVICE_ID = 'knowledge-ingestion';

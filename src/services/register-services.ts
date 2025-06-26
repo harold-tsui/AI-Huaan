@@ -30,7 +30,7 @@ export async function registerAllServices(): Promise<void> {
 
   registerKnowledgeGraphMCPService();
   registerMCPObsidianService();
-  await registerOrganizationService(); // Register the organization service
+  registerOrganizationService(); // Register the organization service
   registerKnowledgeIngestionService(); // Register the knowledge ingestion service
   registerPresentationService();
   

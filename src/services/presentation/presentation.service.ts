@@ -27,7 +27,7 @@ export class PresentationService extends MCPService implements IPresentationServ
     super('presentation-service');
     // In a real DI scenario, this would be injected.
     // For now, we'll fetch it from the factory.
-    const storageService = globalServiceRegistry.getService('ObsidianService');
+    const storageService = globalServiceRegistry.getService('obsidian-storage-service');
     if (!storageService) {
       this.logger.error('StorageService could not be retrieved from the factory.');
       throw new Error('PresentationService failed to initialize: StorageService is unavailable.');

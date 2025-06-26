@@ -10,8 +10,8 @@ const PRESENTATION_SERVICE_ID = 'PresentationService';
 export function registerPresentationService(): void {
   globalServiceFactory.registerServiceConstructor(
     PRESENTATION_SERVICE_ID,
-    PresentationService,
-    [] // No direct constructor dependencies, as it fetches from the factory
+    PresentationService
+    // No dependencies - don't pass empty array
   );
   console.log('PresentationService registered');
 }

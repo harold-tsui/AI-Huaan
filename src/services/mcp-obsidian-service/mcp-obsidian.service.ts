@@ -24,36 +24,87 @@ export class MCPObsidianService extends MCPService implements IStorageService {
   private config: ObsidianServiceConfig;
   private httpClient: AxiosInstance;
 
-  constructor(config: ObsidianServiceConfig) {
-    super('obsidian-storage-service');
-    this.name = 'obsidian-storage';
+  constructor(config?: Partial<ObsidianServiceConfig>) {
+    console.log('MCPObsidianService constructor called');
+    
+    try {
+      super('obsidian-storage-service');
+      console.log('After super() call');
+    } catch (error) {
+      console.error('Error in super() call:', error);
+      throw error;
+    }
+    
+    this.name = 'obsidian-storage-service';
     this.version = '1.0.0';
-    this.config = this.loadConfig(config);
-    this.httpClient = axios.create({
-      baseURL: this.config.obsidianApiUrl,
-      headers: {
-        'Authorization': `Bearer ${this.config.obsidianApiKey}`,
-      }
-    });
-    this.registerRoutes();
-    this.logger.info(`MCPObsidianService initialized for vault: ${this.config.defaultVaultName}`);
+    console.log('After setting name and version');
+    
+    try {
+      const finalConfig = this.loadConfig(config);
+      console.log('After loadConfig');
+      
+      this.httpClient = axios.create({
+        baseURL: finalConfig.obsidianApiUrl,
+        headers: {
+          'Authorization': `Bearer ${finalConfig.obsidianApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('After httpClient setup');
+            // Move registerRoutes to initialize() method
+            console.log('Constructor completed, routes will be registered in initialize()');
+      
+      console.log(`MCPObsidianService initialized with vault: ${finalConfig.defaultVaultName}`);
+    } catch (error) {
+      console.error('Error in MCPObsidianService initialization:', error);
+      throw error;
+    }
   }
 
-  private loadConfig(config: ObsidianServiceConfig): ObsidianServiceConfig {
+  private loadConfig(config?: Partial<ObsidianServiceConfig>): ObsidianServiceConfig {
+    console.log('loadConfig called with NODE_ENV:', process.env.NODE_ENV);
+    console.log('loadConfig called with config:', config);
+    
     const envConfig: Partial<ObsidianServiceConfig> = {
       obsidianApiUrl: process.env.OBSIDIAN_API_URL,
       obsidianApiKey: process.env.OBSIDIAN_API_KEY,
       defaultVaultName: process.env.OBSIDIAN_VAULT_NAME,
     };
+    
+    console.log('Environment config:', envConfig);
 
     // Filter out undefined values from envConfig
     const cleanEnvConfig = Object.fromEntries(Object.entries(envConfig).filter(([_, v]) => v !== undefined));
+    console.log('Clean environment config:', cleanEnvConfig);
+
+    // Ensure config is not null or undefined
+    const safeConfig = config || {};
 
     // Priority: provided config > environment variables
-    const finalConfig = { ...cleanEnvConfig, ...config };
+    const finalConfig = { ...cleanEnvConfig, ...safeConfig };
+    console.log('Final merged config:', finalConfig);
+
+    // In development mode, provide default values if configuration is missing
+    // Check for development mode or if NODE_ENV is not set (default to development)
+    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+      const defaultConfig: ObsidianServiceConfig = {
+        obsidianApiUrl: finalConfig.obsidianApiUrl || 'http://localhost:27123',
+        obsidianApiKey: finalConfig.obsidianApiKey || 'development-mock-key',
+        defaultVaultName: finalConfig.defaultVaultName || 'BASB-Vault'
+      };
+      
+      console.log('Development mode: Using default Obsidian configuration:', defaultConfig);
+      return defaultConfig;
+    }
 
     if (!finalConfig.obsidianApiUrl || !finalConfig.obsidianApiKey || !finalConfig.defaultVaultName) {
-      this.logger.error('Obsidian service is not fully configured. Please provide API URL, API key, and vault name.');
+      // Use console.error instead of this.logger since logger might not be initialized yet
+      console.error('Obsidian service is not fully configured. Please provide API URL, API key, and vault name.');
+      console.error('Missing config values:', {
+        obsidianApiUrl: !finalConfig.obsidianApiUrl,
+        obsidianApiKey: !finalConfig.obsidianApiKey,
+        defaultVaultName: !finalConfig.defaultVaultName
+      });
       throw new Error('Obsidian service configuration is incomplete.');
     }
 
@@ -61,10 +112,24 @@ export class MCPObsidianService extends MCPService implements IStorageService {
   }
 
   private registerRoutes(): void {
-    this.on('obsidian:createNote', this.handleCreateNoteRequest.bind(this));
-    this.on('obsidian:getNoteContent', this.handleGetNoteContentRequest.bind(this));
-    this.on('obsidian:listNotes', this.handleListNotesRequest.bind(this)); // Added for listing notes
-    console.log('MCPObsidianService routes registered: createNote, getNoteContent, listNotes');
+    this.logger.info('Registering routes for MCPObsidianService');
+    
+    // Check if this.on is a function
+    if (typeof this.on !== 'function') {
+      this.logger.error('this.on is not a function:', typeof this.on);
+      throw new Error('this.on is not a function');
+    }
+    
+    try {
+             this.on('obsidian:createNote', this.handleCreateNoteRequest.bind(this));
+             this.on('obsidian:getNoteContent', this.handleGetNoteContentRequest.bind(this));
+             this.on('obsidian:listNotes', this.handleListNotesRequest.bind(this));
+             
+             this.logger.info('MCPObsidianService routes registered: createNote, getNoteContent, listNotes');
+         } catch (error) {
+             this.logger.error('Error during route registration:', error);
+             throw error;
+         }
   }
 
   // --- IStorageService Implementation ---
@@ -325,6 +390,10 @@ export class MCPObsidianService extends MCPService implements IStorageService {
   async initialize(): Promise<boolean> {
     try {
       this.logger.info(`MCPObsidianService initializing for vault: ${this.config.defaultVaultName}`);
+      
+      // Register routes after service is fully initialized
+      this.registerRoutes();
+      
       return true;
     } catch (error) {
       this.logger.error('Failed to initialize MCPObsidianService:', error);
@@ -457,8 +526,8 @@ export class MCPObsidianService extends MCPService implements IStorageService {
 
   getInfo(): ServiceInfo {
     return {
-      id: 'mcp-obsidian-service',
-      name: 'mcp-obsidian-service',
+      id: this.serviceId,
+      name: this.serviceId,
       version: '1.0.0',
       status: this.getStatus(),
       description: 'MCP Obsidian storage service for managing notes'
