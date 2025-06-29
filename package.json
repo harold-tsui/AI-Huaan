@@ -20,7 +20,7 @@
     "db:migrate": "typeorm migration:run",
     "db:revert": "typeorm migration:revert",
     "db:generate": "typeorm migration:generate",
-    "dev:admin": "vite --config vite.config.ts"
+    "dev:admin": "vite --config vite.config.mjs"
   },
   "keywords": [
     "ai",
@@ -52,6 +52,7 @@
     "compression": "^1.7.4",
     "compromise": "^14.10.0",
     "config": "^3.3.9",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "cosine-similarity": "^1.0.1",
     "csv-parser": "^3.0.0",
@@ -120,6 +121,7 @@
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/compression": "^1.7.5",
+    "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.0",

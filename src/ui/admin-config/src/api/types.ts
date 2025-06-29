@@ -4,6 +4,7 @@ export interface ApiResponse<T = any> {
   message: string
   data: T
   success: boolean
+  status?: boolean // 添加可选的status属性
 }
 
 // 分页参数

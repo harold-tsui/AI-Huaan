@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "vite --port 5174",
     "dev:admin": "vite --port 5174",
+    "dev:mock": "vite --port 5174 --mode mock",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "type-check": "vue-tsc --noEmit",
+    "type-check": "vue-tsc --noEmit --skipLibCheck",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
@@ -27,6 +28,7 @@
     "@vitejs/plugin-vue": "^4.2.3",
     "@vue/eslint-config-typescript": "^12.0.0",
     "@vue/tsconfig": "^0.4.0",
+    "esbuild": "^0.25.5",
     "eslint": "^8.49.0",
     "eslint-plugin-vue": "^9.17.0",
     "sass": "^1.66.1",

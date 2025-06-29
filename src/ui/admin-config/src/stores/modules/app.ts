@@ -187,7 +187,7 @@ export const useAppStore = defineStore('app', () => {
       isLoadingConfigs.value = true
       const response = await systemApi.getConfigs()
       
-      if (response.success) {
+      if (response.status || response.success) {
         const configs: Record<string, SystemConfig> = {}
         response.data.list.forEach(config => {
           configs[config.key] = config
@@ -221,7 +221,7 @@ export const useAppStore = defineStore('app', () => {
       
       const response = await systemApi.updateConfig(config.id, { value })
       
-      if (response.success) {
+      if (response.status || response.success) {
         systemConfigs.value[key] = response.data
         ElMessage.success('配置更新成功')
         return true

@@ -35,6 +35,7 @@ export default defineConfig({
   server: {
     port: 5174,
     host: true,
+    // 启用API代理，连接到后端服务
     proxy: {
       '/api': {
         target: 'http://localhost:8081',

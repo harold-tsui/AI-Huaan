@@ -1,5 +1,6 @@
 <template>
   <div class="dashboard-container">
+    <h1 style="color: red; font-size: 48px; text-align: center; margin: 50px 0;">DASHBOARD 测试页面</h1>
     <div class="dashboard-text">欢迎使用 BASB 管理系统</div>
     
     <!-- 统计卡片 -->
@@ -222,8 +223,11 @@ onMounted(() => {
 <style lang="scss" scoped>
 .dashboard-container {
   padding: 20px;
-  background-color: #f5f5f5;
-  min-height: calc(100vh - 84px);
+  background-color: #f5f7fa;
+  min-height: 100%;
+  height: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .dashboard-text {
@@ -232,6 +236,11 @@ onMounted(() => {
   color: #303133;
   margin-bottom: 30px;
   text-align: center;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid #409eff;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .stats-row {

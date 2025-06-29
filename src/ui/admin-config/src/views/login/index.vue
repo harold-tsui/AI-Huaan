@@ -140,13 +140,29 @@ const handleLogin = async () => {
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
+        loading.value = true
+        console.log('开始登录...')
         await userStore.login(loginForm)
+        console.log('登录成功，token:', userStore.token)
+        console.log('用户信息:', userStore.userInfo)
+        
+        // 确保获取最新权限
+        console.log('获取用户权限...')
+        const permissionData = await userStore.getUserPermissions()
+        console.log('权限获取结果:', permissionData)
+        console.log('当前权限列表:', userStore.permissions)
+        console.log('当前角色列表:', userStore.roles)
+        
         ElMessage.success('登录成功')
         // 跳转到目标页面
         const redirect = route.query.redirect as string
+        console.log('准备跳转到:', redirect || '/')
         await router.push(redirect || '/')
       } catch (error: any) {
+        console.error('登录失败:', error)
         ElMessage.error(error.message || '登录失败')
+      } finally {
+        loading.value = false
       }
     }
   })

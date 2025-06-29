@@ -1,5 +1,5 @@
 import { http } from '../request'
-import type { ApiResponse, UserInfo, LoginParams, LoginResult } from '../types'
+import type { ApiResponse, LoginParams, LoginResult, UserInfo } from '../types'
 
 // 认证API
 export const authApi = {
@@ -14,10 +14,9 @@ export const authApi = {
   },
 
   // 刷新token
-  refreshToken(refreshToken: string) {
-    return http.post<ApiResponse<{ token: string; refreshToken: string }>>('/auth/refresh', {
-      refreshToken
-    })
+  refreshToken() {
+    // 不再需要传递refreshToken参数，因为它会通过cookie自动发送
+    return http.post<ApiResponse<{ token: string; refreshToken: string }>>('/auth/refresh')
   },
 
   // 获取当前用户信息
@@ -54,10 +53,9 @@ export const authApi = {
   },
 
   // 验证token
-  verifyToken(token: string) {
-    return http.post<ApiResponse<{ valid: boolean; user?: UserInfo }>>('/auth/verify-token', {
-      token
-    })
+  verifyToken() {
+    // 不再需要传递token参数，因为它会通过cookie自动发送
+    return http.post<ApiResponse<{ valid: boolean; user?: UserInfo }>>('/auth/verify-token')
   },
 
   // 获取登录历史
@@ -101,211 +99,5 @@ export const authApi = {
   // 终止所有其他会话
   terminateAllOtherSessions() {
     return http.delete<ApiResponse<void>>('/auth/sessions/others')
-  }
-}
-
-// 权限API
-export const permissionApi = {
-  // 获取用户权限
-  getUserPermissions(userId?: string) {
-    const url = userId ? `/auth/permissions/${userId}` : '/auth/permissions'
-    return http.get<ApiResponse<{
-      permissions: string[]
-      roles: string[]
-      effectivePermissions: string[]
-    }>>(url)
-  },
-
-  // 检查权限
-  checkPermission(permission: string) {
-    return http.post<ApiResponse<{ hasPermission: boolean }>>('/auth/check-permission', {
-      permission
-    })
-  },
-
-  // 批量检查权限
-  checkPermissions(permissions: string[]) {
-    return http.post<ApiResponse<Record<string, boolean>>>('/auth/check-permissions', {
-      permissions
-    })
-  },
-
-  // 获取所有可用权限
-  getAllPermissions() {
-    return http.get<ApiResponse<Array<{
-      id: string
-      name: string
-      description: string
-      category: string
-      resource: string
-      action: string
-    }>>>('/auth/permissions/all')
-  },
-
-  // 获取角色列表
-  getRoles() {
-    return http.get<ApiResponse<Array<{
-      id: string
-      name: string
-      description: string
-      permissions: string[]
-      userCount: number
-      createdAt: string
-    }>>>('/auth/roles')
-  },
-
-  // 创建角色
-  createRole(data: {
-    name: string
-    description?: string
-    permissions: string[]
-  }) {
-    return http.post<ApiResponse<{
-      id: string
-      name: string
-      description: string
-      permissions: string[]
-    }>>('/auth/roles', data)
-  },
-
-  // 更新角色
-  updateRole(roleId: string, data: {
-    name?: string
-    description?: string
-    permissions?: string[]
-  }) {
-    return http.put<ApiResponse<{
-      id: string
-      name: string
-      description: string
-      permissions: string[]
-    }>>(`/auth/roles/${roleId}`, data)
-  },
-
-  // 删除角色
-  deleteRole(roleId: string) {
-    return http.delete<ApiResponse<void>>(`/auth/roles/${roleId}`)
-  },
-
-  // 分配角色给用户
-  assignRoleToUser(userId: string, roleId: string) {
-    return http.post<ApiResponse<void>>(`/auth/users/${userId}/roles/${roleId}`)
-  },
-
-  // 移除用户角色
-  removeRoleFromUser(userId: string, roleId: string) {
-    return http.delete<ApiResponse<void>>(`/auth/users/${userId}/roles/${roleId}`)
-  }
-}
-
-// 用户管理API（管理员功能）
-export const userManagementApi = {
-  // 获取用户列表
-  getUsers(params?: {
-    page?: number
-    pageSize?: number
-    search?: string
-    role?: string
-    status?: 'active' | 'inactive' | 'banned'
-    sortBy?: 'username' | 'email' | 'createdAt' | 'lastLogin'
-    sortOrder?: 'asc' | 'desc'
-  }) {
-    return http.get<ApiResponse<{
-      list: Array<UserInfo & {
-        status: 'active' | 'inactive' | 'banned'
-        lastLogin?: string
-        loginCount: number
-      }>
-      total: number
-    }>>('/admin/users', { params })
-  },
-
-  // 获取单个用户详情
-  getUser(userId: string) {
-    return http.get<ApiResponse<UserInfo & {
-      status: 'active' | 'inactive' | 'banned'
-      lastLogin?: string
-      loginCount: number
-      createdBy?: string
-      updatedBy?: string
-    }>>(`/admin/users/${userId}`)
-  },
-
-  // 创建用户
-  createUser(data: {
-    username: string
-    email: string
-    password: string
-    roles?: string[]
-    status?: 'active' | 'inactive'
-  }) {
-    return http.post<ApiResponse<UserInfo>>('/admin/users', data)
-  },
-
-  // 更新用户
-  updateUser(userId: string, data: {
-    username?: string
-    email?: string
-    roles?: string[]
-    status?: 'active' | 'inactive' | 'banned'
-  }) {
-    return http.put<ApiResponse<UserInfo>>(`/admin/users/${userId}`, data)
-  },
-
-  // 删除用户
-  deleteUser(userId: string) {
-    return http.delete<ApiResponse<void>>(`/admin/users/${userId}`)
-  },
-
-  // 重置用户密码
-  resetUserPassword(userId: string, newPassword: string) {
-    return http.put<ApiResponse<void>>(`/admin/users/${userId}/reset-password`, {
-      newPassword
-    })
-  },
-
-  // 禁用用户
-  banUser(userId: string, reason?: string) {
-    return http.put<ApiResponse<void>>(`/admin/users/${userId}/ban`, { reason })
-  },
-
-  // 启用用户
-  unbanUser(userId: string) {
-    return http.put<ApiResponse<void>>(`/admin/users/${userId}/unban`)
-  },
-
-  // 强制用户下线
-  forceLogout(userId: string) {
-    return http.post<ApiResponse<void>>(`/admin/users/${userId}/force-logout`)
-  },
-
-  // 获取用户统计
-  getUserStats() {
-    return http.get<ApiResponse<{
-      total: number
-      active: number
-      inactive: number
-      banned: number
-      newThisMonth: number
-      loginStats: {
-        today: number
-        thisWeek: number
-        thisMonth: number
-      }
-      roleDistribution: Record<string, number>
-    }>>('/admin/users/stats')
-  },
-
-  // 批量操作用户
-  batchUpdateUsers(operations: Array<{
-    userId: string
-    action: 'activate' | 'deactivate' | 'ban' | 'delete'
-    data?: any
-  }>) {
-    return http.post<ApiResponse<{
-      success: number
-      failed: number
-      errors: Array<{ userId: string; error: string }>
-    }>>('/admin/users/batch', { operations })
   }
 }

@@ -91,9 +91,9 @@
         
         <el-table-column prop="phone" label="手机号" min-width="120" />
         
-        <el-table-column prop="role" label="角色" width="100">
+        <el-table-column prop="roles" label="角色" width="100">
           <template #default="{ row }">
-            <el-tag :type="getRoleType(row.role)">{{ getRoleText(row.role) }}</el-tag>
+            <el-tag :type="getRoleType(row.roles)">{{ getRoleText(row.roles) }}</el-tag>
           </template>
         </el-table-column>
         
@@ -200,8 +200,8 @@
           />
         </el-form-item>
         
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="userForm.role" placeholder="请选择角色">
+        <el-form-item label="角色" prop="roles">
+          <el-select v-model="userForm.roles" placeholder="请选择角色" multiple>
             <el-option label="管理员" value="admin" />
             <el-option label="编辑者" value="editor" />
             <el-option label="查看者" value="viewer" />
@@ -257,7 +257,7 @@ interface User {
   email: string
   phone: string
   avatar: string
-  role: string
+  roles: string[]
   status: string
   lastLogin: string
   createdAt: string
@@ -275,7 +275,7 @@ const userFormRef = ref<FormInstance>()
 const searchForm = reactive({
   keyword: '',
   status: '',
-  role: ''
+  role: '' // 保留单个角色搜索，因为搜索通常是按单个角色筛选
 })
 
 // 分页
@@ -293,7 +293,7 @@ const userList = ref<User[]>([
     email: 'admin@example.com',
     phone: '13800138000',
     avatar: '',
-    role: 'admin',
+    roles: ['admin'],
     status: 'active',
     lastLogin: '2024-01-15 10:30:00',
     createdAt: '2024-01-01 09:00:00'
@@ -304,7 +304,7 @@ const userList = ref<User[]>([
     email: 'editor@example.com',
     phone: '13800138001',
     avatar: '',
-    role: 'editor',
+    roles: ['editor'],
     status: 'active',
     lastLogin: '2024-01-14 16:20:00',
     createdAt: '2024-01-02 10:00:00'
@@ -315,7 +315,7 @@ const userList = ref<User[]>([
     email: 'viewer@example.com',
     phone: '13800138002',
     avatar: '',
-    role: 'viewer',
+    roles: ['viewer'],
     status: 'disabled',
     lastLogin: '2024-01-10 14:15:00',
     createdAt: '2024-01-03 11:00:00'
@@ -331,7 +331,7 @@ const userForm = reactive({
   password: '',
   confirmPassword: '',
   avatar: '',
-  role: '',
+  roles: [] as string[],
   status: 'active',
   remark: ''
 })
@@ -367,8 +367,9 @@ const userFormRules = {
       trigger: 'blur'
     }
   ],
-  role: [
-    { required: true, message: '请选择角色', trigger: 'change' }
+  roles: [
+    { required: true, message: '请选择角色', trigger: 'change' },
+    { type: 'array', min: 1, message: '至少选择一个角色', trigger: 'change' }
   ]
 }
 
@@ -376,23 +377,28 @@ const userFormRules = {
 const dialogTitle = computed(() => isEdit.value ? '编辑用户' : '添加用户')
 
 // 获取角色类型
-const getRoleType = (role: string) => {
+const getRoleType = (roles: string[]) => {
+  if (!roles || roles.length === 0) return 'info';
+  const primaryRole = roles[0];
   const types: Record<string, string> = {
     admin: 'danger',
     editor: 'warning',
     viewer: 'info'
   }
-  return types[role] || 'info'
+  return types[primaryRole] || 'info'
 }
 
 // 获取角色文本
-const getRoleText = (role: string) => {
+const getRoleText = (roles: string[]) => {
+  if (!roles || roles.length === 0) return '无角色';
+  
   const texts: Record<string, string> = {
     admin: '管理员',
     editor: '编辑者',
     viewer: '查看者'
   }
-  return texts[role] || role
+  
+  return roles.map(role => texts[role] || role).join(', ')
 }
 
 // 获取状态类型
@@ -671,7 +677,7 @@ const resetUserForm = () => {
     password: '',
     confirmPassword: '',
     avatar: '',
-    role: '',
+    roles: [],
     status: 'active',
     remark: ''
   })

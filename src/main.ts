@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import cookieParser from 'cookie-parser';
 import { Server } from 'http';
 import { setupRoutes } from './routes';
 import { registerAllServices } from './services/register-services';
@@ -46,7 +47,7 @@ export let server: Server | null = null;
       await globalServiceFactory.createAndInitializeServices(serviceConfigs);
       logger.info('All MCP services have been created and initialized.');
     } catch (error) {
-      logger.error('Failed to create and initialize services:', error);
+      logger.error('Failed to create and initialize services:', (error as Error).message);
       throw error;
     }
 
@@ -54,9 +55,19 @@ export let server: Server | null = null;
     const port = Number(process.env.PORT) || 8081;
 
     // Middlewares
-    app.use(cors());
+    app.use(cors({
+      origin: true,
+      credentials: true
+    }));
     app.use(express.json());
+    app.use(cookieParser());
     app.use(express.static(path.join(__dirname, '../dist')));
+    
+    // 导入认证中间件
+    const { verifyToken } = require('./middleware/auth.middleware');
+    
+    // 应用认证中间件到所有路由
+    app.use(verifyToken);
 
     // Setup routes
     setupRoutes(app);
@@ -69,7 +80,7 @@ export let server: Server | null = null;
       });
 
       server.on('error', (err) => {
-        logger.error('Server failed to start:', err);
+        logger.error('Server failed to start:', (err as Error).message);
         reject(err);
       });
     });
@@ -77,7 +88,7 @@ export let server: Server | null = null;
 
   if (require.main === module) {
     bootstrap().catch(error => {
-      logger.error('Failed to bootstrap the application:', error);
+      logger.error('Failed to bootstrap the application:', (error as Error).message);
       process.exit(1);
     });
   }

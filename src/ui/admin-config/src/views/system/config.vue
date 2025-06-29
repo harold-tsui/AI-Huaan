@@ -375,12 +375,15 @@ const importConfig = () => {
     const reader = new FileReader()
     reader.onload = (e) => {
       try {
-        const config = JSON.parse(e.target?.result as string)
-        
-        if (config.basic) Object.assign(basicConfig, config.basic)
-        if (config.security) Object.assign(securityConfig, config.security)
-        if (config.email) Object.assign(emailConfig, config.email)
-        if (config.storage) Object.assign(storageConfig, config.storage)
+        // 确保e.target?.result不为null或undefined再进行解析
+        if (e.target?.result) {
+          const config = JSON.parse(e.target.result as string)
+          
+          if (config.basic) Object.assign(basicConfig, config.basic)
+          if (config.security) Object.assign(securityConfig, config.security)
+          if (config.email) Object.assign(emailConfig, config.email)
+          if (config.storage) Object.assign(storageConfig, config.storage)
+        }
         
         ElMessage({
           message: '配置导入成功',
